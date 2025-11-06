@@ -1,30 +1,61 @@
+// app/transactions/hooks/useExport.ts
+
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import XLSX from 'xlsx';
 import { Transaction } from '../types';
 
-console.log("useexport================= ", FileSystem.documentDirectory);
-
 export const useExport = () => {
 
-    const exportToExcel = async (transactions: Transaction[], bookName: string) => {
+    const formatDateTimeToIST = (dateStr: string) => {
+        const dateObj = new Date(dateStr);
+
+        const date = new Intl.DateTimeFormat('en-GB', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric',
+            timeZone: 'Asia/Kolkata',
+        }).format(dateObj);
+
+        const time = new Intl.DateTimeFormat('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+            timeZone: 'Asia/Kolkata',
+        }).format(dateObj);
+
+        return { date, time };
+    };
+
+
+    const exportToExcel = async (transactions: Transaction[], bookName: string, businessName?: string) => {
         try {
             const wb = XLSX.utils.book_new();
-            const wsData = transactions.map(tx => ({
-                Date: tx.date,
-                Type: tx.type,
-                Category: tx.category,
-                Amount: tx.amount,
-                Description: tx.description,
-            }));
+            const now = new Date();
+
+            const wsData = transactions.map(tx => {
+                const { date, time } = formatDateTimeToIST(tx.date);
+                return {
+                    Date: date,
+                    Time: time,
+                    Type: tx.type,
+                    Category: tx.category,
+                    Amount: tx.amount,
+                    Description: tx.description,
+                };
+            });
+
             const ws = XLSX.utils.json_to_sheet(wsData);
             XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
 
+            const timestamp = `${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}`;
+
             const wbout = XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
-            const uri = `${FileSystem.documentDirectory}${bookName}_transactions.xlsx`;
+            // const filename = `${bookName}${businessName ? `_${businessName}` : ''}_transactions.xlsx`;
+            const filename = `${bookName}${businessName ? `_${businessName}` : ''}_transactions_${timestamp}.xlsx`;
+            const uri = `${FileSystem.documentDirectory}${filename}`;
 
             await FileSystem.writeAsStringAsync(uri, wbout, { encoding: 'base64' });
-            console.log('Excel saved at:', uri);
             return uri;
         } catch (error) {
             console.error('Excel export error:', error);
@@ -32,17 +63,19 @@ export const useExport = () => {
         }
     };
 
-    const exportToCSV = async (transactions: Transaction[], bookName: string) => {
+
+    const exportToCSV = async (transactions: Transaction[], bookName: string, businessName?: string) => {
         try {
-            const header = 'Date,Type,Category,Amount,Description';
-            const rows = transactions.map(tx =>
-                `${tx.date},${tx.type},${tx.category},${tx.amount},${tx.description}`
-            );
+            const header = 'Date,Time,Type,Category,Amount,Description';
+            const rows = transactions.map(tx => {
+                const { date, time } = formatDateTimeToIST(tx.date);
+                return `${date},${time},${tx.type},${tx.category},${tx.amount},${tx.description}`;
+            });
             const csvString = [header, ...rows].join('\n');
 
-            const uri = `${FileSystem.documentDirectory}${bookName}_transactions.csv`;
+            const filename = `${bookName}${businessName ? `_${businessName}` : ''}_transactions.csv`;
+            const uri = `${FileSystem.documentDirectory}${filename}`;
             await FileSystem.writeAsStringAsync(uri, csvString, { encoding: 'utf8' });
-            console.log('CSV saved at:', uri);
             return uri;
         } catch (error) {
             console.error('CSV export error:', error);
@@ -50,19 +83,10 @@ export const useExport = () => {
         }
     };
 
-    //   const shareFile = async (fileUri: string) => {
-    //     if (!(await Sharing.isAvailableAsync())) {
-    //       alert('Sharing is not available on this device');
-    //       return;
-    //     }
-    //     await Sharing.shareAsync(fileUri);
-    //   };
     const shareFile = async (fileUri: string) => {
-        console.log("Entered the sharing function");
         const available = await Sharing.isAvailableAsync();
         if (!available) {
             alert(`Sharing not supported in Expo Go. File saved at: ${fileUri}`);
-            console.log('File URI:', fileUri);  
             return;
         }
         await Sharing.shareAsync(fileUri);

@@ -20,10 +20,8 @@ const ExportModal: React.FC<ExportModalProps> = ({ visible, onClose, transaction
         try {
             let fileUri = '';
             if (type === 'excel') fileUri = await exportToExcel(transactions, bookName);
-            console.log("Export to excel function executed");
             if (type === 'csv') fileUri = await exportToCSV(transactions, bookName);
             //   if (type === 'pdf') fileUri = await exportToPDF(transactions, bookName);
-            console.log("Now calling shareFile function");
             await shareFile(fileUri);
         } catch (error) {
             console.error('Export failed:', error);
