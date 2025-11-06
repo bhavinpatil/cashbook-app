@@ -13,6 +13,8 @@ import { useFocusEffect } from '@react-navigation/native'; // ✅ added
 import ScreenContainer from '../../components/ScreenContainer';
 import { GLOBAL_STYLES, COLORS } from '../../constants/theme';
 import CustomButton from '@/components/CustomButton';
+import EditNameModal from '../../components/EditNameModal';
+import { Alert, View } from 'react-native';
 
 interface Business {
   id: string;
@@ -21,6 +23,9 @@ interface Business {
 
 export default function BusinessesScreen() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [editVisible, setEditVisible] = useState(false);
+  const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
+
   const router = useRouter();
 
   // Load businesses from local storage
@@ -41,15 +46,59 @@ export default function BusinessesScreen() {
     }, [])
   );
 
+  const deleteBusiness = async (id: string) => {
+    Alert.alert('Confirm Delete', 'Delete this business and all its books?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          const businessesData = await AsyncStorage.getItem('businesses');
+          const booksData = await AsyncStorage.getItem('books');
+          const businesses = businessesData ? JSON.parse(businessesData) : [];
+          const books = booksData ? JSON.parse(booksData) : [];
+
+          const updatedBusinesses = businesses.filter((b: Business) => b.id !== id);
+          const updatedBooks = books.filter((b: any) => b.businessId !== id);
+
+          await AsyncStorage.setItem('businesses', JSON.stringify(updatedBusinesses));
+          await AsyncStorage.setItem('books', JSON.stringify(updatedBooks));
+          loadBusinesses();
+        },
+      },
+    ]);
+  };
+
+  const handleEditSave = async (newName: string) => {
+    if (!selectedBusiness || !newName) return;
+    const updated = businesses.map((b) =>
+      b.id === selectedBusiness.id ? { ...b, name: newName } : b
+    );
+    await AsyncStorage.setItem('businesses', JSON.stringify(updated));
+    setBusinesses(updated);
+  };
+
   const renderItem = ({ item }: { item: Business }) => (
-    <TouchableOpacity
-      style={styles.item}
-      // onPress={() => router.push(`/books?businessId=${item.id}`)}
-      onPress={() => router.push(`/businesses/${item.id}/books`)}
-    >
-      <Text style={styles.itemText}>{item.name}</Text>
-    </TouchableOpacity>
+    <View style={styles.item}>
+      <TouchableOpacity
+        style={{ flex: 1 }}
+        onPress={() => router.push(`/businesses/${item.id}/books`)}
+      >
+        <Text style={styles.itemText}>{item.name}</Text>
+      </TouchableOpacity>
+
+      <View style={styles.actionsContainer}>
+        <TouchableOpacity onPress={() => { setSelectedBusiness(item); setEditVisible(true); }}>
+          <Text style={styles.actionText}>Edit</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => deleteBusiness(item.id)}>
+          <Text style={[styles.actionText, { color: COLORS.danger }]}>Delete</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
+
 
   return (
     <ScreenContainer>
@@ -66,20 +115,52 @@ export default function BusinessesScreen() {
       />
 
       <CustomButton title="＋ Add New Business" onPress={() => router.push("/businesses/add-business")} />
+
+      <EditNameModal
+        visible={editVisible}
+        initialValue={selectedBusiness?.name || ''}
+        title="Edit Business Name"
+        onSave={handleEditSave}
+        onClose={() => setEditVisible(false)}
+      />
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
   item: {
-    padding: 14,
-    backgroundColor: COLORS.card,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
+
   itemText: {
     fontSize: 16,
-    color: COLORS.textDark,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,            // space between title and buttons
+  },
+
+  actionsContainer: {
+    flexDirection: 'row',       // places Edit & Delete side by side
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+  },
+
+  actionText: {
+    color: COLORS.primary,
+    fontWeight: '600',
+    fontSize: 15,
+    marginRight: 12,            // space between Edit & Delete
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    textAlign: 'center',
   },
 });
