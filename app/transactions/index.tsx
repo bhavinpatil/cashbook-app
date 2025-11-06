@@ -6,17 +6,18 @@ import TransactionSummary from './components/TransactionSummary';
 import TransactionList from './components/TransactionList';
 import AddTransactionModal from './components/AddTransactionModal';
 import { useTransactions } from './hooks/useTransactions';
-import CustomButton from '@/components/CustomButton';
 import { COLORS } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import TransactionFilterPanel from './components/TransactionFilterPanel';
 import { Transaction } from './types';
 import EditTransactionModal from './components/EditTransactionModal';
+import ExportModal from './components/ExportModal';
 
 export default function TransactionsScreen() {
   const { bookId } = useLocalSearchParams(); // 👈 get the bookId from route
   const { transactions, addTransaction, deleteTransaction, updateTransaction, loading, categories } = useTransactions(bookId as string);
   const [modalVisible, setModalVisible] = useState(false);
+  const [exportModalVisible, setExportModalVisible] = useState(false);
 
   if (!bookId) {
     return <Text style={{ marginTop: 50, textAlign: 'center' }}>No book selected.</Text>;
@@ -154,7 +155,32 @@ export default function TransactionsScreen() {
             <Ionicons name="arrow-up-circle" size={22} color="white" />
             <Text style={{ color: 'white', fontWeight: '600', marginLeft: 6 }}>Cash Out</Text>
           </TouchableOpacity>
+
+          {/* Export Button */}
+          <TouchableOpacity
+            onPress={() => setExportModalVisible(true)}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: COLORS.secondary,
+              paddingVertical: 10,
+              paddingHorizontal: 20,
+              borderRadius: 30,
+              elevation: 4,
+            }}
+          >
+            <Ionicons name="download-outline" size={22} color="white" />
+            <Text style={{ color: 'white', fontWeight: '600', marginLeft: 6 }}>Export</Text>
+          </TouchableOpacity>
         </View>
+
+        {/* Export Modal */}
+        <ExportModal
+          visible={exportModalVisible}
+          onClose={() => setExportModalVisible(false)}
+          transactions={filteredTransactions}
+          bookName={bookId as string} // optionally replace with bookName if available
+        />
 
         {/* 🧩 Filter FAB (bottom-right corner) */}
         <TouchableOpacity

@@ -12,6 +12,7 @@ export const COLORS = {
   textSecondary: '#6c757d',
   text: '#0056b3',
   gray2: '#e0e0e0',
+  secondary: '#6c757d',
 };
 
 export const GLOBAL_STYLES = {
