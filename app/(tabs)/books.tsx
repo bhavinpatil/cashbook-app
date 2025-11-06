@@ -1,5 +1,4 @@
 // app/(tabs)/books.tsx
-
 import React, { useState, useCallback } from 'react';
 import {
   Text,
@@ -47,13 +46,10 @@ export default function BooksScreen() {
       const businessesData = await AsyncStorage.getItem('businesses');
 
       const allBooks: Book[] = booksData ? JSON.parse(booksData) : [];
-      const allBusinesses: Business[] = businessesData
-        ? JSON.parse(businessesData)
-        : [];
+      const allBusinesses: Business[] = businessesData ? JSON.parse(businessesData) : [];
 
       setBusinesses(allBusinesses);
 
-      // Map business name for each book
       const combined = allBooks.map((book) => {
         const business = allBusinesses.find((b) => b.id === book.businessId);
         return {
@@ -102,42 +98,55 @@ export default function BooksScreen() {
     }
   };
 
+  // Each Book Card
   const renderItem = ({ item }: { item: Book & { businessName: string } }) => (
-    <TouchableOpacity
-      style={styles.item}
-      onPress={() => router.push({
-        pathname: `/transactions`,
-        params: { bookId: item.id, bookName: item.name },
-      })}
-    >
+    <View style={styles.item}>
       <Text style={styles.bookName}>{item.name}</Text>
       <Text style={styles.businessName}>🏢 {item.businessName}</Text>
-    </TouchableOpacity>
+
+      <View style={styles.actionsContainer}>
+        {/* View Transactions Button */}
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: COLORS.primary }]}
+          onPress={() =>
+            router.push({
+              pathname: '/transactions',
+              params: { bookId: item.id, bookName: item.name },
+            })
+          }
+        >
+          <Text style={styles.actionText}>📒 Transactions</Text>
+        </TouchableOpacity>
+
+        {/* View Insights Button */}
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: COLORS.success }]}
+          onPress={() =>
+            router.push({
+              pathname: '/insights',
+              params: { bookId: item.id, bookName: item.name },
+            })
+          }
+        >
+          <Text style={styles.actionText}>📊 Insights</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 
   return (
     <ScreenContainer>
       <Text style={GLOBAL_STYLES.title}>All Books</Text>
-      <Text style={GLOBAL_STYLES.subtitle}>
-        Select a book to view transactions
-      </Text>
+      <Text style={GLOBAL_STYLES.subtitle}>Select a book to view details</Text>
 
       <FlatList
         data={books}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ gap: 10, paddingBottom: 80 }}
+        contentContainerStyle={{ gap: 12, paddingBottom: 80 }}
       />
 
-      {/* Floating Add Button */}
-      {/* <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => setIsModalVisible(true)}
-        >
-          <Text style={styles.addButtonText}>＋ Add New Book</Text>
-        </TouchableOpacity>
-      </View> */}
+      {/* Add New Book Button */}
       <CustomButton title="＋ Add New Book" onPress={() => setIsModalVisible(true)} />
 
       {/* Add Book Modal */}
@@ -178,41 +187,40 @@ export default function BooksScreen() {
 
 const styles = StyleSheet.create({
   item: {
-    padding: 14,
     backgroundColor: COLORS.card,
-    borderRadius: 8,
+    padding: 14,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
   bookName: {
     fontSize: 16,
+    fontWeight: '600',
     color: COLORS.textDark,
   },
   businessName: {
     fontSize: 14,
     color: COLORS.textLight,
     marginTop: 4,
+    marginBottom: 10,
   },
-  footer: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
+  actionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
   },
-  addButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 14,
-    borderRadius: 10,
+  actionButton: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 8,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
   },
-  addButtonText: {
+  actionText: {
     color: 'white',
-    fontSize: 16,
     fontWeight: '600',
   },
   modalContainer: {

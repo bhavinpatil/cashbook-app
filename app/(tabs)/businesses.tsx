@@ -82,25 +82,39 @@ export default function BusinessesScreen() {
     <View style={styles.item}>
       <TouchableOpacity
         style={{ flex: 1 }}
-        onPress={() => router.push({
-          pathname: '/businesses/[businessId]/books',
-          params: { businessId: item.id, businessName: item.name },
-        })}
+        onPress={() =>
+          router.push({
+            pathname: '/businesses/[businessId]/books',
+            params: { businessId: item.id, businessName: item.name },
+          })
+        }
+        activeOpacity={0.8}
       >
-        <Text style={styles.itemText}>{item.name}</Text>
+        <Text style={[styles.itemText, { fontWeight: 'bold', fontSize: 24, margin: 1 }]}>
+          {item.name}
+        </Text>
       </TouchableOpacity>
 
-      <View style={styles.actionsContainer}>
-        <TouchableOpacity onPress={() => { setSelectedBusiness(item); setEditVisible(true); }}>
-          <Text style={styles.actionText}>Edit</Text>
+      {/* 🟢 Edit & Delete spaced apart */}
+      <View style={[styles.actionsContainer, { marginTop: 20 }]}>
+        <TouchableOpacity
+          onPress={() => {
+            setSelectedBusiness(item);
+            setEditVisible(true);
+          }}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.actionText, { fontSize: 20 }]}>Edit</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => deleteBusiness(item.id)}>
-          <Text style={[styles.actionText, { color: COLORS.danger }]}>Delete</Text>
+        <TouchableOpacity onPress={() => deleteBusiness(item.id)} activeOpacity={0.7}>
+          <Text style={[styles.actionText, { fontSize: 20, color: COLORS.danger }]}>Delete</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
+
+
 
 
   return (
@@ -150,20 +164,21 @@ const styles = StyleSheet.create({
   },
 
   actionsContainer: {
-    flexDirection: 'row',       // places Edit & Delete side by side
-    justifyContent: 'flex-start',
+    flexDirection: 'row',
+    justifyContent: 'space-between', // ← this spreads Edit (left) & Delete (right)
     alignItems: 'center',
+    marginTop: 10,
+    paddingHorizontal: 12, // optional: adds side spacing
   },
 
   actionText: {
     color: COLORS.primary,
     fontWeight: '600',
-    fontSize: 15,
-    marginRight: 12,            // space between Edit & Delete
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-    textAlign: 'center',
+    fontSize: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 6,
   },
+
+
 });

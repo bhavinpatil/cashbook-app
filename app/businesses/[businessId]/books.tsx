@@ -109,26 +109,36 @@ export default function BusinessBooksScreen() {
         onPress={() => router.push(`/transactions?bookId=${item.id}`)}
         activeOpacity={0.8}
       >
-        <Text style={styles.itemText}>{item.name}</Text>
+        <Text style={[styles.itemText, { fontWeight: 'bold', fontSize: 24, margin: 1 }]}>
+          {item.name}
+        </Text>
       </TouchableOpacity>
 
       {/* Edit/Delete buttons below the name */}
-      <View style={styles.actionRow}>
+      <View style={[styles.actionsContainer, { marginTop: 20 }]}>
         <TouchableOpacity
           onPress={() => {
             setSelectedBook(item);
             setEditVisible(true);
           }}
         >
-          <Text style={styles.editButton}>✏️ Edit</Text>
+          <Text style={[styles.actionText, { fontSize: 20, marginLeft: 12 }]}>Edit</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => deleteBook(item.id)}>
-          <Text style={styles.deleteButton}>🗑️ Delete</Text>
+          <Text
+            style={[
+              styles.actionText,
+              { fontSize: 20, marginLeft: 12, color: COLORS.danger },
+            ]}
+          >
+            Delete
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
   );
+
   const handleAddBook = async () => {
     if (!bookName.trim()) {
       Alert.alert('Error', 'Please enter a valid book name.');
@@ -277,4 +287,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 
+  actionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between', // ← this spreads Edit (left) & Delete (right)
+    alignItems: 'center',
+    marginTop: 10,
+    paddingHorizontal: 12, // optional: adds side spacing
+  },
+
+  actionText: {
+    color: COLORS.primary,
+    fontWeight: '600',
+    fontSize: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+  },
 });
