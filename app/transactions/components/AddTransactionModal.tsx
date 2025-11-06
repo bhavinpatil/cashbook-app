@@ -1,12 +1,12 @@
 // app/transactions/components/AddTransactionModal.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, TextInput, TouchableOpacity, Button, Platform, FlatList } from 'react-native';
+import { View, Text, Modal, TextInput, TouchableOpacity, Button, Platform, FlatList, Image, Alert } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { COLORS, GLOBAL_STYLES } from '../../../constants/theme';
 import { Transaction } from '../types';
 import { randomUUID } from 'expo-crypto';
 import { Keyboard } from 'react-native';
-
+import * as ImagePicker from 'expo-image-picker';
 
 interface Props {
     visible: boolean;
@@ -22,6 +22,7 @@ export default function AddTransactionModal({ visible, onClose, onAdd, categorie
     const [date, setDate] = useState(new Date());
     const [showPicker, setShowPicker] = useState(false);
     const [category, setCategory] = useState('');
+    const [images, setImages] = useState<string[]>([]);
 
     // Reset form when modal opens
     useEffect(() => {
@@ -31,8 +32,60 @@ export default function AddTransactionModal({ visible, onClose, onAdd, categorie
             setDescription('');
             setDate(new Date());
             setCategory('');
+            setImages([]);
         }
     }, [visible]);
+
+    // 🧠 Pick Image from Gallery
+    const pickImage = async () => {
+        if (images.length >= 4) {
+            Alert.alert('Limit reached', 'You can only add up to 4 images.');
+            return;
+        }
+
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission required', 'Please grant gallery access to add images.');
+            return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsMultipleSelection: false,
+            quality: 0.8,
+        });
+
+        if (!result.canceled && result.assets?.length > 0) {
+            setImages((prev) => [...prev, result.assets[0].uri]);
+        }
+    };
+
+    // 📸 Capture photo using camera
+    const captureImage = async () => {
+        if (images.length >= 4) {
+            Alert.alert('Limit reached', 'You can only add up to 4 images.');
+            return;
+        }
+
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission required', 'Please grant camera access to take photos.');
+            return;
+        }
+
+        const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            quality: 0.8,
+        });
+
+        if (!result.canceled && result.assets?.length > 0) {
+            setImages((prev) => [...prev, result.assets[0].uri]);
+        }
+    };
+
+    const removeImage = (uri: string) => {
+        setImages((prev) => prev.filter((img) => img !== uri));
+    };
 
     const handleSave = () => {
         if (!amount.trim() || isNaN(Number(amount)) || Number(amount) <= 0) {
@@ -51,6 +104,7 @@ export default function AddTransactionModal({ visible, onClose, onAdd, categorie
             description,
             date: date.toISOString(),
             category: category.trim() || undefined,
+            images,
         };
 
         onAdd(newTx);
@@ -186,6 +240,62 @@ export default function AddTransactionModal({ visible, onClose, onAdd, categorie
                             )}
                         />
                     )}
+
+                    {/* 📷 Image Section */}
+                    <Text style={{ marginTop: 10, fontWeight: '600' }}>Photos (max 4)</Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginVertical: 10 }}>
+                        {images.map((uri, index) => (
+                            <View key={index} style={{ position: 'relative', marginRight: 10, marginBottom: 10 }}>
+                                <Image
+                                    source={{ uri }}
+                                    style={{ width: 70, height: 70, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border }}
+                                />
+                                <TouchableOpacity
+                                    onPress={() => removeImage(uri)}
+                                    style={{
+                                        position: 'absolute',
+                                        top: -8,
+                                        right: -8,
+                                        backgroundColor: COLORS.danger,
+                                        borderRadius: 12,
+                                        paddingHorizontal: 4,
+                                    }}
+                                >
+                                    <Text style={{ color: 'white', fontSize: 12 }}>×</Text>
+                                </TouchableOpacity>
+                            </View>
+                        ))}
+                        {images.length < 4 && (
+                            <View style={{ flexDirection: 'row', gap: 10 }}>
+                                <TouchableOpacity
+                                    onPress={pickImage}
+                                    style={{
+                                        width: 70,
+                                        height: 70,
+                                        backgroundColor: COLORS.border,
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        borderRadius: 8,
+                                    }}
+                                >
+                                    <Text>📁</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={captureImage}
+                                    style={{
+                                        width: 70,
+                                        height: 70,
+                                        backgroundColor: COLORS.border,
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        borderRadius: 8,
+                                    }}
+                                >
+                                    <Text>📷</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    </View>
 
 
                     {/* Date and Time Picker */}

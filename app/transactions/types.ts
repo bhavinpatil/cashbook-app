@@ -8,4 +8,5 @@ export interface Transaction {
   description: string;
   date: string; // ISO string
   category?: string;
+  images?: string[];
 }
