@@ -16,10 +16,46 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
+      {/* <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+      </Stack> */}
+
+
+      <Stack>
+        {/* Tabs root (no header) */}
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+
+
+        {/* Add dynamic header for Businesses screen */}
+        <Stack.Screen
+          name="(tabs)/businesses"
+          options={{ title: 'Businesses' }}
+        />
+
+
+        {/* Add dynamic header for Books of a specific business */}
+        <Stack.Screen
+          name="businesses/[businessId]/books"
+          options={({ route }) => ({
+            title: (route.params as { businessName?: string })?.businessName || 'Books',
+          })}
+        />
+
+
+        {/* Add dynamic header for Transactions of a specific book */}
+        <Stack.Screen
+          name="transactions/index"
+          options={({ route }) => ({
+            title: (route.params as { bookName?: string })?.bookName || 'Transactions',
+          })}
+        />
+
+
+        {/* Any modal screens */}
+        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
+
       <StatusBar style="auto" />
     </ThemeProvider>
   );

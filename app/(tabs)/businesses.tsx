@@ -82,7 +82,10 @@ export default function BusinessesScreen() {
     <View style={styles.item}>
       <TouchableOpacity
         style={{ flex: 1 }}
-        onPress={() => router.push(`/businesses/${item.id}/books`)}
+        onPress={() => router.push({
+          pathname: '/businesses/[businessId]/books',
+          params: { businessId: item.id, businessName: item.name },
+        })}
       >
         <Text style={styles.itemText}>{item.name}</Text>
       </TouchableOpacity>

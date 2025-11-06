@@ -1,6 +1,6 @@
 // app/businesses/[businessId]/books.tsx
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Text,
   FlatList,
@@ -8,8 +8,11 @@ import {
   StyleSheet,
   Alert,
   View,
+  Modal,
+  TextInput,
+  Button,
 } from 'react-native';
-import { useLocalSearchParams, Link, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import ScreenContainer from '../../../components/ScreenContainer';
@@ -37,6 +40,11 @@ export default function BusinessBooksScreen() {
   // Modal states
   const [editVisible, setEditVisible] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+
+  // Modal for adding book
+  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+  const [bookName, setBookName] = useState('');
+
 
   const loadBooks = async () => {
     try {
@@ -121,6 +129,29 @@ export default function BusinessBooksScreen() {
       </View>
     </View>
   );
+  const handleAddBook = async () => {
+    if (!bookName.trim()) {
+      Alert.alert('Error', 'Please enter a valid book name.');
+      return;
+    }
+
+    try {
+      const id = Math.random().toString(36).substring(2, 9);
+      const newBook = { id, name: bookName.trim(), businessId };
+
+      const data = await AsyncStorage.getItem('books');
+      const books = data ? JSON.parse(data) : [];
+      books.push(newBook);
+
+      await AsyncStorage.setItem('books', JSON.stringify(books));
+      setBookName('');
+      setIsAddModalVisible(false);
+      loadBooks();
+    } catch (error) {
+      console.error('Error saving book:', error);
+    }
+  };
+
 
 
   return (
@@ -147,7 +178,7 @@ export default function BusinessBooksScreen() {
       <View style={styles.footer}>
         <CustomButton
           title="＋ Add New Book"
-          onPress={() => router.push(`/books/add-book?businessId=${businessId}`)}
+          onPress={() => setIsAddModalVisible(true)}
           style={{ marginBottom: 40 }}
         />
       </View>
@@ -161,6 +192,27 @@ export default function BusinessBooksScreen() {
         onSave={handleEditSave}
         onClose={() => setEditVisible(false)}
       />
+      {/* Add Book Modal */}
+      <Modal visible={isAddModalVisible} transparent animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalCard}>
+            <Text style={GLOBAL_STYLES.title}>＋ Add New Book</Text>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Book Name"
+              value={bookName}
+              onChangeText={setBookName}
+            />
+
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
+              <Button title="Cancel" onPress={() => setIsAddModalVisible(false)} />
+              <Button title="Save" onPress={handleAddBook} color={COLORS.primary} />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </ScreenContainer>
   );
 }
@@ -203,4 +255,26 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
   },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCard: {
+    backgroundColor: 'white',
+    width: '90%',
+    borderRadius: 12,
+    padding: 20,
+    elevation: 10,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 8,
+    padding: 10,
+    marginVertical: 10,
+    fontSize: 16,
+  },
+
 });

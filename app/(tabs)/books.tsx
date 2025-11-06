@@ -105,7 +105,10 @@ export default function BooksScreen() {
   const renderItem = ({ item }: { item: Book & { businessName: string } }) => (
     <TouchableOpacity
       style={styles.item}
-      onPress={() => router.push(`/transactions?bookId=${item.id}`)}
+      onPress={() => router.push({
+        pathname: `/transactions`,
+        params: { bookId: item.id, bookName: item.name },
+      })}
     >
       <Text style={styles.bookName}>{item.name}</Text>
       <Text style={styles.businessName}>🏢 {item.businessName}</Text>
