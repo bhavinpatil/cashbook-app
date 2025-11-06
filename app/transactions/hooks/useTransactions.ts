@@ -6,6 +6,7 @@ import { Transaction } from '../types';
 export const useTransactions = (bookId: string) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<string[]>([]);
 
   const STORAGE_KEY = `transactions_${bookId}`;
 
@@ -23,11 +24,18 @@ export const useTransactions = (bookId: string) => {
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
   }, [transactions, bookId, loading]);
 
+  useEffect(() => {
+    const uniqueCategories = Array.from(
+      new Set(transactions.map((t) => t.category).filter((c): c is string => !!c))
+    );
+    setCategories(uniqueCategories);
+  }, [transactions]);
+
   const addTransaction = (tx: Transaction) => setTransactions((prev) => [tx, ...prev]);
   const deleteTransaction = (id: string) =>
     setTransactions((prev) => prev.filter((t) => t.id !== id));
   const updateTransaction = (updated: Transaction) =>
     setTransactions((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
 
-  return { transactions, addTransaction, deleteTransaction, updateTransaction, loading };
+  return { transactions, addTransaction, deleteTransaction, updateTransaction, loading, categories };
 };

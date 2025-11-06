@@ -1,6 +1,6 @@
 // app/transactions/components/AddTransactionModal.tsx
-import React, { useState } from 'react';
-import { View, Text, Modal, TextInput, TouchableOpacity, Button, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Modal, TextInput, TouchableOpacity, Button, Platform, FlatList } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { COLORS, GLOBAL_STYLES } from '../../../constants/theme';
 import { Transaction } from '../types';
@@ -12,14 +12,27 @@ interface Props {
     visible: boolean;
     onClose: () => void;
     onAdd: (tx: Transaction) => void;
+    categories?: string[];
 }
 
-export default function AddTransactionModal({ visible, onClose, onAdd }: Props) {
+export default function AddTransactionModal({ visible, onClose, onAdd, categories = [], }: Props) {
     const [type, setType] = useState<'credit' | 'debit'>('credit');
     const [amount, setAmount] = useState('');
     const [description, setDescription] = useState('');
     const [date, setDate] = useState(new Date());
     const [showPicker, setShowPicker] = useState(false);
+    const [category, setCategory] = useState('');
+
+    // Reset form when modal opens
+    useEffect(() => {
+        if (visible) {
+            setType('credit');
+            setAmount('');
+            setDescription('');
+            setDate(new Date());
+            setCategory('');
+        }
+    }, [visible]);
 
     const handleSave = () => {
         if (!amount.trim() || isNaN(Number(amount)) || Number(amount) <= 0) {
@@ -28,7 +41,7 @@ export default function AddTransactionModal({ visible, onClose, onAdd }: Props) 
         }
 
         // hide picker if open to avoid dismiss errors on Android
-        setShowPicker(false);
+        // setShowPicker(false);
 
         const newTx: Transaction = {
             id: randomUUID(),
@@ -37,17 +50,19 @@ export default function AddTransactionModal({ visible, onClose, onAdd }: Props) 
             amount: Number(amount),
             description,
             date: date.toISOString(),
+            category: category.trim() || undefined,
         };
 
         onAdd(newTx);
+        onClose();
 
         // Small delay ensures picker fully unmounts before modal closes
-        setTimeout(() => {
-            onClose();
-            setAmount('');
-            setDescription('');
-            setDate(new Date());
-        }, 200);
+        // setTimeout(() => {
+        //     onClose();
+        //     setAmount('');
+        //     setDescription('');
+        //     setDate(new Date());
+        // }, 200);
     };
 
 
@@ -134,6 +149,44 @@ export default function AddTransactionModal({ visible, onClose, onAdd }: Props) 
                         value={description}
                         onChangeText={setDescription}
                     />
+                    <Text style={{ marginTop: 8, fontWeight: '600' }}>Category</Text>
+
+                    <TextInput
+                        placeholder="Enter category or select existing"
+                        value={category}
+                        onChangeText={setCategory}
+                        style={{
+                            borderWidth: 1,
+                            borderColor: COLORS.border,
+                            borderRadius: 8,
+                            padding: 10,
+                            marginVertical: 8,
+                        }}
+                    />
+
+                    {categories.length > 0 && (
+                        <FlatList
+                            data={categories.filter((c) => c.toLowerCase().includes(category.toLowerCase()))}
+                            keyExtractor={(item) => item}
+                            horizontal
+                            style={{ marginVertical: 8 }}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    onPress={() => setCategory(item)}
+                                    style={{
+                                        backgroundColor: COLORS.primary,
+                                        paddingVertical: 6,
+                                        paddingHorizontal: 12,
+                                        borderRadius: 20,
+                                        marginRight: 8,
+                                    }}
+                                >
+                                    <Text style={{ color: 'white' }}>{item}</Text>
+                                </TouchableOpacity>
+                            )}
+                        />
+                    )}
+
 
                     {/* Date and Time Picker */}
                     <TouchableOpacity

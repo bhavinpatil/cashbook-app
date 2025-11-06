@@ -1,3 +1,5 @@
+// app/transactions/types.ts
+
 export interface Transaction {
   id: string;
   bookId: string;
@@ -5,4 +7,5 @@ export interface Transaction {
   amount: number;
   description: string;
   date: string; // ISO string
+  category?: string;
 }

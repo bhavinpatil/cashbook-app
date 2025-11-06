@@ -20,6 +20,9 @@ export default function TransactionList({ transactions, onDelete }: Props) {
     >
       <View style={{ flex: 1 }}>
         <Text style={styles.desc}>{item.description || '(No description)'}</Text>
+        <Text style={{ fontSize: 12, color: COLORS.textLight, marginTop: 2 }}>
+          {item.category || 'No category'}
+        </Text>
         <Text style={styles.date}>
           {dayjs(item.date).format('DD MMM YYYY · hh:mm A')}
         </Text>
