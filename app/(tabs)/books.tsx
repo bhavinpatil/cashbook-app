@@ -19,6 +19,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import ScreenContainer from '../../components/ScreenContainer';
 import { GLOBAL_STYLES, COLORS } from '../../constants/theme';
 import { randomUUID } from 'expo-crypto';
+import CustomButton from '@/components/CustomButton';
 
 interface Book {
   id: string;
@@ -126,14 +127,15 @@ export default function BooksScreen() {
       />
 
       {/* Floating Add Button */}
-      <View style={styles.footer}>
+      {/* <View style={styles.footer}>
         <TouchableOpacity
           style={styles.addButton}
           onPress={() => setIsModalVisible(true)}
         >
           <Text style={styles.addButtonText}>＋ Add New Book</Text>
         </TouchableOpacity>
-      </View>
+      </View> */}
+      <CustomButton title="＋ Add New Book" onPress={() => setIsModalVisible(true)} />
 
       {/* Add Book Modal */}
       <Modal visible={isModalVisible} transparent animationType="slide">
