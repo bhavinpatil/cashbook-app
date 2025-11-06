@@ -33,6 +33,7 @@ export default function AddTransactionModal({ visible, onClose, onAdd, categorie
             setDate(new Date());
             setCategory('');
             setImages([]);
+            setImages([]);
         }
     }, [visible]);
 

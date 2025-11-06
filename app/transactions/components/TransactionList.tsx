@@ -8,39 +8,45 @@ import { Transaction } from '../types';
 interface Props {
   transactions: Transaction[];
   onDelete: (id: string) => void;
+  onEdit: (tx: Transaction) => void;
 }
 
-export default function TransactionList({ transactions, onDelete }: Props) {
+export default function TransactionList({ transactions, onDelete, onEdit }: Props) {
   const renderItem = ({ item }: { item: Transaction }) => (
-    <View
-      style={[
-        styles.item,
-        { borderLeftColor: item.type === 'credit' ? COLORS.success : COLORS.danger },
-      ]}
+    <TouchableOpacity
+      onPress={() => onEdit(item)} // 👈 handle edit tap
+      activeOpacity={0.8}
     >
-      <View style={{ flex: 1 }}>
-        <Text style={styles.desc}>{item.description || '(No description)'}</Text>
-        <Text style={{ fontSize: 12, color: COLORS.textLight, marginTop: 2 }}>
-          {item.category || 'No category'}
-        </Text>
-        <Text style={styles.date}>
-          {dayjs(item.date).format('DD MMM YYYY · hh:mm A')}
-        </Text>
+      <View
+        style={[
+          styles.item,
+          { borderLeftColor: item.type === 'credit' ? COLORS.success : COLORS.danger },
+        ]}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={styles.desc}>{item.description || '(No description)'}</Text>
+          <Text style={{ fontSize: 12, color: COLORS.textLight, marginTop: 2 }}>
+            {item.category || 'No category'}
+          </Text>
+          <Text style={styles.date}>
+            {dayjs(item.date).format('DD MMM YYYY · hh:mm A')}
+          </Text>
+        </View>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text
+            style={[
+              styles.amount,
+              { color: item.type === 'credit' ? COLORS.success : COLORS.danger },
+            ]}
+          >
+            {item.type === 'credit' ? '+' : '-'} ₹{item.amount}
+          </Text>
+          <TouchableOpacity onPress={() => onDelete(item.id)}>
+            <Text style={styles.delete}>Delete</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        <Text
-          style={[
-            styles.amount,
-            { color: item.type === 'credit' ? COLORS.success : COLORS.danger },
-          ]}
-        >
-          {item.type === 'credit' ? '+' : '-'} ₹{item.amount}
-        </Text>
-        <TouchableOpacity onPress={() => onDelete(item.id)}>
-          <Text style={styles.delete}>Delete</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -74,3 +80,8 @@ const styles = StyleSheet.create({
   amount: { fontSize: 16, fontWeight: '600', marginLeft: 10 },
   delete: { fontSize: 12, color: COLORS.danger, marginTop: 6 },
 });
+
+function onEdit(item: Transaction): void {
+  throw new Error('Function not implemented.');
+}
+

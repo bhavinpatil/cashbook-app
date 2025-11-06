@@ -10,10 +10,12 @@ import CustomButton from '@/components/CustomButton';
 import { COLORS } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import TransactionFilterPanel from './components/TransactionFilterPanel';
+import { Transaction } from './types';
+import EditTransactionModal from './components/EditTransactionModal';
 
 export default function TransactionsScreen() {
   const { bookId } = useLocalSearchParams(); // 👈 get the bookId from route
-  const { transactions, addTransaction, deleteTransaction, loading, categories } = useTransactions(bookId as string);
+  const { transactions, addTransaction, deleteTransaction, updateTransaction, loading, categories } = useTransactions(bookId as string);
   const [modalVisible, setModalVisible] = useState(false);
 
   if (!bookId) {
@@ -33,6 +35,14 @@ export default function TransactionsScreen() {
 
   const applyFilters = (options: any) => setFilters(options);
   const resetFilters = () => setFilters(null);
+
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+
+  const handleEdit = (tx: Transaction) => {
+    setSelectedTx(tx);
+    setEditModalVisible(true);
+  };
 
   const getFilteredTransactions = () => {
     if (!filters) return transactions;
@@ -84,7 +94,7 @@ export default function TransactionsScreen() {
       {/* ... TransactionSummary */}
       <TransactionSummary balance={balance} totalCredit={totalCredit} totalDebit={totalDebit} />
 
-      <TransactionList transactions={filteredTransactions} onDelete={deleteTransaction} />
+      <TransactionList transactions={filteredTransactions} onDelete={deleteTransaction} onEdit={handleEdit} />
 
       {/* Add Transaction Button */}
       <CustomButton title="＋ Add Transaction" onPress={() => setModalVisible(true)} style={{ marginBottom: 40 }} />
@@ -115,6 +125,20 @@ export default function TransactionsScreen() {
         onAdd={addTransaction}
         categories={categories}
       />
+
+      {selectedTx && (
+        <EditTransactionModal
+          visible={editModalVisible}
+          onClose={() => setEditModalVisible(false)}
+          transaction={selectedTx}
+          onUpdate={(updatedTx) => {
+            updateTransaction(updatedTx);
+            setEditModalVisible(false);
+          }}
+          categories={categories}
+        />
+      )}
+
 
       {/* Filter Modal */}
       <TransactionFilterPanel
