@@ -145,7 +145,7 @@ export default function TransactionFilterPanel({
           </ScrollView>
 
           {/* Action Buttons */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 , marginBottom: 40}}>
             <TouchableOpacity
               onPress={handleReset}
               style={{
@@ -157,7 +157,7 @@ export default function TransactionFilterPanel({
                 marginRight: 8,
               }}
             >
-              <Text>Reset</Text>
+              <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Reset</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleApply}
@@ -169,7 +169,7 @@ export default function TransactionFilterPanel({
                 alignItems: 'center',
               }}
             >
-              <Text style={{ color: 'white', fontWeight: 'bold' }}>Apply</Text>
+              <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>Apply</Text>
             </TouchableOpacity>
           </View>
         </View>
