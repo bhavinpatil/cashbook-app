@@ -42,8 +42,11 @@ export default function EditTransactionModal({
 
     useEffect(() => {
         if (transaction) {
-            // load that transaction’s images or reset if none
+            setAmount(String(transaction.amount));
+            setDescription(transaction.description || '');
+            setCategory(transaction.category || '');
             setImages(transaction.images || []);
+            setDate(new Date(transaction.date));
         }
     }, [transaction]);
 
@@ -295,18 +298,18 @@ export default function EditTransactionModal({
 }
 
 const styles = StyleSheet.create({
-  previewContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.95)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  previewBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  previewImage: {
-    width: '90%',
-    height: '80%',
-    borderRadius: 10,
-  },
+    previewContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.95)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    previewBackdrop: {
+        ...StyleSheet.absoluteFillObject,
+    },
+    previewImage: {
+        width: '90%',
+        height: '80%',
+        borderRadius: 10,
+    },
 });

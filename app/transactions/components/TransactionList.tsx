@@ -1,6 +1,6 @@
 // app/transactions/components/TransactionList.tsx
-import React from 'react';
-import { FlatList, TouchableOpacity, Text, View, StyleSheet } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { FlatList, TouchableOpacity, Text, View, StyleSheet, TextInput } from 'react-native';
 import dayjs from 'dayjs';
 import { COLORS } from '../../../constants/theme';
 import { Transaction } from '../types';
@@ -12,6 +12,19 @@ interface Props {
 }
 
 export default function TransactionList({ transactions, onDelete, onEdit }: Props) {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filtered list based on search query
+  const filteredTransactions = useMemo(() => {
+    if (!searchQuery.trim()) return transactions;
+    const lower = searchQuery.toLowerCase();
+    return transactions.filter(
+      (tx) =>
+        tx.description?.toLowerCase().includes(lower) ||
+        tx.category?.toLowerCase().includes(lower)
+    );
+  }, [transactions, searchQuery]);
+
   const renderItem = ({ item }: { item: Transaction }) => (
     <TouchableOpacity
       onPress={() => onEdit(item)} // 👈 handle edit tap
@@ -50,21 +63,41 @@ export default function TransactionList({ transactions, onDelete, onEdit }: Prop
   );
 
   return (
-    <FlatList
-      data={transactions}
-      renderItem={renderItem}
-      keyExtractor={(item) => item.id}
-      contentContainerStyle={{ gap: 10, paddingBottom: 80 }}
-      ListEmptyComponent={
-        <Text style={{ textAlign: 'center', marginTop: 40, color: COLORS.textLight }}>
-          No transactions yet.
-        </Text>
-      }
-    />
+    <View style={{ flex: 1 }}>
+      {/* 🔍 Search Bar */}
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search by description or category..."
+        placeholderTextColor={COLORS.textLight}
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+      />
+      <FlatList
+        data={filteredTransactions}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ gap: 10, paddingBottom: 80 }}
+        ListEmptyComponent={
+          <Text style={{ textAlign: 'center', marginTop: 40, color: COLORS.textLight }}>
+            No transactions yet.
+          </Text>
+        }
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  searchInput: {
+    backgroundColor: COLORS.card,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 12,
+    color: COLORS.textDark,
+  },
   item: {
     backgroundColor: COLORS.card,
     borderRadius: 8,
