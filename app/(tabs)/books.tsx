@@ -139,7 +139,7 @@ export default function BooksScreen() {
       <Modal visible={isModalVisible} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalCard}>
-            <Text style={GLOBAL_STYLES.title}>Add New Book</Text>
+            <Text style={GLOBAL_STYLES.title}>＋ Add New Book</Text>
 
             <TextInput
               style={styles.input}

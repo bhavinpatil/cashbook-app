@@ -57,7 +57,7 @@ export default function AddBook() {
 
   return (
     <ScreenContainer>
-      <Text style={GLOBAL_STYLES.title}>Add New Book</Text>
+      <Text style={GLOBAL_STYLES.title}>＋ Add New Book</Text>
 
       <InputField
         placeholder="Book Name"

@@ -65,7 +65,7 @@ export default function BusinessesScreen() {
         contentContainerStyle={{ gap: 10, marginBottom: 20 }}
       />
 
-      <CustomButton title="Add New Business" onPress={() => router.push("/businesses/add-business")} />
+      <CustomButton title="＋ Add New Business" onPress={() => router.push("/businesses/add-business")} />
     </ScreenContainer>
   );
 }

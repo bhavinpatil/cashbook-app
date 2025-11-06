@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import ScreenContainer from '../../../components/ScreenContainer';
 import { GLOBAL_STYLES, COLORS } from '../../../constants/theme';
+import CustomButton from '@/components/CustomButton'; // ✅ import your custom button
 
 interface Book {
   id: string;
@@ -77,7 +78,7 @@ export default function BusinessBooksScreen() {
   const renderItem = ({ item }: { item: Book }) => (
     <TouchableOpacity
       style={styles.item}
-      onPress={() => router.push(`/transactions?bookId=${item.id}`)}
+      onPress={() => router.push(`/transactions?bookId=${item.id}`)} // ✅ correct
       onLongPress={() => deleteBook(item.id)}
     >
       <Text style={styles.itemText}>{item.name}</Text>
@@ -95,17 +96,17 @@ export default function BusinessBooksScreen() {
           data={books}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ gap: 10, paddingBottom: 80 }}
+          contentContainerStyle={{ gap: 10, paddingBottom: 100 }}
         />
       </View>
 
-      {/* Floating Button Section */}
+      {/* ✅ Floating Add Book Button using CustomButton */}
       <View style={styles.footer}>
-        <Link href={`/books/add-book?businessId=${businessId}`} asChild>
-          <TouchableOpacity style={styles.addButton}>
-            <Text style={styles.addButtonText}>＋ Add New Book</Text>
-          </TouchableOpacity>
-        </Link>
+        <CustomButton
+          title="＋ Add New Book"
+          onPress={() => router.push(`/books/add-book?businessId=${businessId}`)}
+          style={{ marginBottom: 40 }}
+        />
       </View>
     </ScreenContainer>
   );
@@ -128,21 +129,5 @@ const styles = StyleSheet.create({
     bottom: 20,
     left: 20,
     right: 20,
-  },
-  addButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  addButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });

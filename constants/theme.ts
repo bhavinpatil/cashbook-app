@@ -6,6 +6,11 @@ export const COLORS = {
   textLight: '#6b6b6b',
   card: '#ffffff',
   border: '#dce3f0',
+  success: '#28a745',
+  danger: '#dc3545',
+  textGray: '#888888',
+  textSecondary: '#6c757d',
+  text: '#0056b3',
 };
 
 export const GLOBAL_STYLES = {
