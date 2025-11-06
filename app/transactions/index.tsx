@@ -39,6 +39,9 @@ export default function TransactionsScreen() {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
 
+  const [selectedType, setSelectedType] = useState<'credit' | 'debit'>('credit');
+
+
   const handleEdit = (tx: Transaction) => {
     setSelectedTx(tx);
     setEditModalVisible(true);
@@ -97,26 +100,79 @@ export default function TransactionsScreen() {
       <TransactionList transactions={filteredTransactions} onDelete={deleteTransaction} onEdit={handleEdit} />
 
       {/* Add Transaction Button */}
-      <CustomButton title="＋ Add Transaction" onPress={() => setModalVisible(true)} style={{ marginBottom: 40 }} />
-
-      {/* FAB Filter Button */}
-      <TouchableOpacity
+      {/* <CustomButton title="＋ Add Transaction" onPress={() => setModalVisible(true)} style={{ marginBottom: 40 }} /> */}
+      {/* Floating Buttons Section */}
+      <View
         style={{
           position: 'absolute',
-          bottom: 100,
+          bottom: 30,
+          left: 20,
           right: 20,
-          width: 56,
-          height: 56,
-          borderRadius: 28,
-          backgroundColor: COLORS.primary,
-          justifyContent: 'center',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
           alignItems: 'center',
-          elevation: 6,
         }}
-        onPress={() => setFilterVisible(true)}
       >
-        <Ionicons name="filter" size={24} color="white" />
-      </TouchableOpacity>
+        {/* Cash In & Cash Out Buttons */}
+        <View style={{ flexDirection: 'row', gap: 16, marginBottom: 30 }}>
+          {/* 💰 Cash In */}
+          <TouchableOpacity
+            onPress={() => {
+              setSelectedType('credit');
+              setModalVisible(true);
+            }}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: COLORS.success,
+              paddingVertical: 10,
+              paddingHorizontal: 20,
+              borderRadius: 30,
+              elevation: 4,
+            }}
+          >
+            <Ionicons name="arrow-down-circle" size={22} color="white" />
+            <Text style={{ color: 'white', fontWeight: '600', marginLeft: 6 }}>Cash In</Text>
+          </TouchableOpacity>
+
+          {/* 💸 Cash Out */}
+          <TouchableOpacity
+            onPress={() => {
+              setSelectedType('debit');
+              setModalVisible(true);
+            }}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: COLORS.danger,
+              paddingVertical: 10,
+              paddingHorizontal: 20,
+              borderRadius: 30,
+              elevation: 4,
+            }}
+          >
+            <Ionicons name="arrow-up-circle" size={22} color="white" />
+            <Text style={{ color: 'white', fontWeight: '600', marginLeft: 6 }}>Cash Out</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 🧩 Filter FAB (bottom-right corner) */}
+        <TouchableOpacity
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            backgroundColor: COLORS.primary,
+            justifyContent: 'center',
+            alignItems: 'center',
+            elevation: 6,
+          }}
+          onPress={() => setFilterVisible(true)}
+        >
+          <Ionicons name="filter" size={24} color="white" />
+        </TouchableOpacity>
+      </View>
+
 
       {/* Add Transaction Modal */}
       <AddTransactionModal
@@ -124,6 +180,7 @@ export default function TransactionsScreen() {
         onClose={() => setModalVisible(false)}
         onAdd={addTransaction}
         categories={categories}
+        defaultType={selectedType}
       />
 
       {selectedTx && (

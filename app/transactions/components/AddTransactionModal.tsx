@@ -13,9 +13,10 @@ interface Props {
     onClose: () => void;
     onAdd: (tx: Transaction) => void;
     categories?: string[];
+    defaultType?: 'credit' | 'debit';
 }
 
-export default function AddTransactionModal({ visible, onClose, onAdd, categories = [], }: Props) {
+export default function AddTransactionModal({ visible, onClose, onAdd, categories = [], defaultType = 'credit',}: Props) {
     const [type, setType] = useState<'credit' | 'debit'>('credit');
     const [amount, setAmount] = useState('');
     const [description, setDescription] = useState('');
@@ -27,7 +28,7 @@ export default function AddTransactionModal({ visible, onClose, onAdd, categorie
     // Reset form when modal opens
     useEffect(() => {
         if (visible) {
-            setType('credit');
+            setType(defaultType);
             setAmount('');
             setDescription('');
             setDate(new Date());
@@ -35,7 +36,7 @@ export default function AddTransactionModal({ visible, onClose, onAdd, categorie
             setImages([]);
             setImages([]);
         }
-    }, [visible]);
+    }, [visible, defaultType]);
 
     // 🧠 Pick Image from Gallery
     const pickImage = async () => {
