@@ -51,6 +51,13 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="fuel"
+        options={{
+          title: "Fuel Log",
+          tabBarIcon: ({ color }) => <Ionicons name="speedometer" color={color} size={24} />,
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',

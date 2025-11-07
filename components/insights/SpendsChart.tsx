@@ -24,9 +24,9 @@ export default function SpendsChart({
 }) {
     const { loadBudget, saveBudget } = useBudget();
 
-    const [budget, setBudget] = useState<number>(40000);
+    const [budget, setBudget] = useState<number>(0);
     const [showBudgetModal, setShowBudgetModal] = useState(false);
-    const [tempBudget, setTempBudget] = useState<string>('40000');
+    const [tempBudget, setTempBudget] = useState<string>('0');
     const [isDaily, setIsDaily] = useState(true);
 
     // 🧠 Load budget for current month
