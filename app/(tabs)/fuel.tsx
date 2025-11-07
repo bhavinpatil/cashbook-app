@@ -1,81 +1,102 @@
 // app/(tabs)/fuel.tsx
-
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+  Alert,
+} from 'react-native';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import AddFuelModal, { FuelEntryInput } from '@/components/fuel/AddFuelModal';
-import AddOdometerModal from '@/components/fuel/AddOdometerModal';
-import FuelList from '@/components/fuel/FuelList';
-import FuelSummary from '@/components/fuel/FuelSummary';
-import { useFuel, FuelEntry } from '@/hooks/useFuel';
+
+import TripSummary from '@/components/trips/TripSummary';
+import TripList from '@/components/trips/TripList';
+import TripChart from '@/components/trips/TripChart';
+import AddTripModal from '@/components/trips/AddTripModal';
+import { useTrips, Trip } from '@/hooks/useTrips';
 import { useTheme } from '@/contexts/ThemeContext';
 
-export default function FuelScreen() {
+export default function TripScreen() {
   const { theme } = useTheme();
-  const { fuelEntries, addFuelEntry, updateOdometer, removeFuelEntry } = useFuel();
+  const { trips, addTrip, editTrip, removeTrip } = useTrips();
 
-  const [fuelModalVisible, setFuelModalVisible] = useState(false);
-  const [odoModalVisible, setOdoModalVisible] = useState(false);
-  const [selectedEntry, setSelectedEntry] = useState<FuelEntry | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
+  const [showChart, setShowChart] = useState(false);
 
-  const handleFuelSave = async (entry: FuelEntryInput) => {
+  const handleSave = async (tripData: Omit<Trip, 'id' | 'distance' | 'mileage'>) => {
     try {
-      await addFuelEntry({ ...entry, id: entry.id ?? String(Date.now()) });
-      setFuelModalVisible(false);
+      if (editingTrip) {
+        await editTrip({ ...editingTrip, ...tripData });
+        setEditingTrip(null);
+      } else {
+        await addTrip(tripData);
+      }
+      setModalVisible(false);
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to add fuel entry.');
-    }
-  };
-
-  const handleOdometerSave = async (value: number) => {
-    if (selectedEntry) {
-      await updateOdometer(selectedEntry.id, value);
-      setOdoModalVisible(false);
-      setSelectedEntry(null);
+      Alert.alert('Error', err.message || 'Failed to save trip entry.');
     }
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <Stack.Screen options={{ title: 'Fuel Log' }} />
+      <Stack.Screen options={{ title: 'Trips Log' }} />
 
+      {/* Header */}
       <View style={styles.headerRow}>
-        <Text style={[styles.headerText, { color: theme.textDark }]}>Fuel entries</Text>
-        <TouchableOpacity
-          style={[styles.addButton, { backgroundColor: theme.tabActive }]}
-          onPress={() => setFuelModalVisible(true)}
-        >
-          <Ionicons name="add" size={20} color="#fff" />
-        </TouchableOpacity>
+        <Text style={[styles.headerText, { color: theme.textDark }]}>Trips</Text>
+        <View style={{ flexDirection: 'row' }}>
+          {/* Insights Button */}
+          <TouchableOpacity
+            style={[styles.iconButton]}
+            onPress={() => setShowChart(!showChart)}
+          >
+            <Ionicons name={showChart ? 'list-outline' : 'stats-chart-outline'} size={22} color={theme.textDark} />
+          </TouchableOpacity>
+
+          {/* Add Trip Button */}
+          <TouchableOpacity
+            style={[styles.addButton, { backgroundColor: theme.tabActive }]}
+            onPress={() => {
+              setEditingTrip(null);
+              setModalVisible(true);
+            }}
+          >
+            <Ionicons name="add" size={22} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <FuelSummary entries={fuelEntries} />
+      {/* Summary */}
+      {!showChart && <TripSummary trips={trips} />}
 
-      <FuelList
-        entries={fuelEntries}
-        onDelete={async (id) => await removeFuelEntry(id)}
-        onAddOdometer={(entry) => {
-          setSelectedEntry(entry);
-          setOdoModalVisible(true);
+      {/* Conditional View */}
+      {showChart ? (
+        <TripChart trips={trips} />
+      ) : (
+        <TripList
+          trips={trips}
+          onEdit={(trip) => {
+            setEditingTrip(trip);
+            setModalVisible(true);
+          }}
+          onDelete={async (id) => {
+            await removeTrip(id);
+          }}
+        />
+      )}
+
+      {/* Add/Edit Trip Modal */}
+      <AddTripModal
+        visible={modalVisible}
+        onClose={() => {
+          setModalVisible(false);
+          setEditingTrip(null);
         }}
-      />
-
-      <AddFuelModal
-        visible={fuelModalVisible}
-        onClose={() => setFuelModalVisible(false)}
-        onSave={handleFuelSave}
-      />
-
-      <AddOdometerModal
-        visible={odoModalVisible}
-        previousOdometer={
-          selectedEntry
-            ? fuelEntries[fuelEntries.indexOf(selectedEntry) - 1]?.odometer
-            : undefined
-        }
-        onClose={() => setOdoModalVisible(false)}
-        onSave={handleOdometerSave}
+        onSave={handleSave}
+        initial={editingTrip || undefined}
       />
     </SafeAreaView>
   );
@@ -86,13 +107,17 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 6,
   },
   headerText: { fontSize: 20, fontWeight: '600' },
+  iconButton: {
+    padding: 8,
+    marginRight: 8,
+  },
   addButton: {
-    marginLeft: 10,
     padding: 8,
     borderRadius: 8,
   },
