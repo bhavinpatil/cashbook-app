@@ -1,13 +1,22 @@
-// app/transactions/components/AddTransactionModal.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, TextInput, TouchableOpacity, Button, Platform, FlatList, Image, Alert } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { COLORS, GLOBAL_STYLES } from '../../../constants/theme';
+import {
+    View,
+    Text,
+    Modal,
+    TextInput,
+    TouchableOpacity,
+    FlatList,
+    Image,
+    Alert,
+    ScrollView,
+    Platform,
+} from 'react-native';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Transaction } from '../types';
 import { randomUUID } from 'expo-crypto';
-import { Keyboard } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import CustomButton from '@/components/CustomButton';
 
 interface Props {
     visible: boolean;
@@ -17,16 +26,22 @@ interface Props {
     defaultType?: 'credit' | 'debit';
 }
 
-export default function AddTransactionModal({ visible, onClose, onAdd, categories = [], defaultType = 'credit', }: Props) {
+export default function AddTransactionModal({
+    visible,
+    onClose,
+    onAdd,
+    categories = [],
+    defaultType = 'credit',
+}: Props) {
+    const { theme } = useTheme();
     const [type, setType] = useState<'credit' | 'debit'>('credit');
     const [amount, setAmount] = useState('');
     const [description, setDescription] = useState('');
     const [date, setDate] = useState(new Date());
-    const [showPicker, setShowPicker] = useState(false);
     const [category, setCategory] = useState('');
     const [images, setImages] = useState<string[]>([]);
+    const [showPicker, setShowPicker] = useState(false);
 
-    // Reset form when modal opens
     useEffect(() => {
         if (visible) {
             setType(defaultType);
@@ -35,11 +50,9 @@ export default function AddTransactionModal({ visible, onClose, onAdd, categorie
             setDate(new Date());
             setCategory('');
             setImages([]);
-            setImages([]);
         }
     }, [visible, defaultType]);
 
-    // 🧠 Pick Image from Gallery
     const pickImage = async () => {
         if (images.length >= 4) {
             Alert.alert('Limit reached', 'You can only add up to 4 images.');
@@ -63,7 +76,6 @@ export default function AddTransactionModal({ visible, onClose, onAdd, categorie
         }
     };
 
-    // 📸 Capture photo using camera
     const captureImage = async () => {
         if (images.length >= 4) {
             Alert.alert('Limit reached', 'You can only add up to 4 images.');
@@ -90,61 +102,22 @@ export default function AddTransactionModal({ visible, onClose, onAdd, categorie
         setImages((prev) => prev.filter((img) => img !== uri));
     };
 
-    const handleSave = () => {
-        if (!amount.trim() || isNaN(Number(amount)) || Number(amount) <= 0) {
-            alert('Please enter a valid amount');
-            return;
-        }
-
-        // hide picker if open to avoid dismiss errors on Android
-        // setShowPicker(false);
-
-        const newTx: Transaction = {
-            id: randomUUID(),
-            bookId: '',
-            type,
-            amount: Number(amount),
-            description,
-            date: date.toISOString(),
-            category: category.trim() || undefined,
-            images,
-        };
-
-        onAdd(newTx);
-        onClose();
-
-        // Small delay ensures picker fully unmounts before modal closes
-        // setTimeout(() => {
-        //     onClose();
-        //     setAmount('');
-        //     setDescription('');
-        //     setDate(new Date());
-        // }, 200);
-    };
-
-
-    const onChangeDate = (_: any, selectedDate?: Date) => {
-        if (selectedDate) setDate(selectedDate);
-        if (Platform.OS !== 'ios') setShowPicker(false);
-    };
-
+    // ✅ ORIGINAL Android date → then time logic restored
     const showDateTimePicker = () => {
         if (Platform.OS === 'android') {
-            // Step 1: Select Date
             DateTimePickerAndroid.open({
                 value: date,
                 mode: 'date',
                 is24Hour: false,
                 onChange: (_: any, selectedDate?: Date) => {
                     if (selectedDate) {
-                        // Step 2: Select Time
+                        // Step 2: select time
                         DateTimePickerAndroid.open({
                             value: selectedDate,
                             mode: 'time',
                             is24Hour: false,
                             onChange: (_: any, selectedTime?: Date) => {
                                 if (selectedTime) {
-                                    // Combine selected date and time into one Date object
                                     const finalDate = new Date(
                                         selectedDate.getFullYear(),
                                         selectedDate.getMonth(),
@@ -160,219 +133,316 @@ export default function AddTransactionModal({ visible, onClose, onAdd, categorie
                 },
             });
         } else {
-            // iOS inline picker
             setShowPicker(true);
         }
     };
 
+    const handleSave = () => {
+        if (!amount.trim() || isNaN(Number(amount)) || Number(amount) <= 0) {
+            Alert.alert('Invalid amount', 'Please enter a valid amount');
+            return;
+        }
 
+        const newTx: Transaction = {
+            id: randomUUID(),
+            bookId: '',
+            type,
+            amount: Number(amount),
+            description,
+            date: date.toISOString(),
+            category: category.trim() || undefined,
+            images,
+        };
+
+        onAdd(newTx);
+        onClose();
+    };
 
     return (
         <Modal visible={visible} transparent animationType="slide">
             <View
                 style={{
                     flex: 1,
-                    backgroundColor: 'rgba(0,0,0,0.3)',
+                    backgroundColor: 'rgba(0,0,0,0.4)',
                     justifyContent: 'center',
                     alignItems: 'center',
                 }}
             >
                 <View
                     style={{
-                        backgroundColor: 'white',
-                        width: '90%',
-                        borderRadius: 12,
+                        backgroundColor: theme.card,
+                        width: '92%',
+                        borderRadius: 16,
                         padding: 20,
+                        borderWidth: 1,
+                        borderColor: theme.border,
+                        shadowColor: theme.textDark,
+                        shadowOpacity: 0.2,
+                        shadowRadius: 6,
+                        elevation: 4,
+                        maxHeight: '90%',
                     }}
                 >
-                    <Text style={GLOBAL_STYLES.title}>Add Transaction</Text>
-
-                    {/* Credit / Debit toggle */}
-                    <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 10 }}>
-                        <TouchableOpacity
-                            style={{
-                                backgroundColor: type === 'credit' ? COLORS.success : 'transparent',
-                                padding: 10,
-                                borderRadius: 8,
-                                borderWidth: 1,
-                                borderColor: COLORS.border,
-                                marginHorizontal: 5,
-                            }}
-                            onPress={() => setType('credit')}
-                        >
-                            <Text style={{ color: type === 'credit' ? 'white' : COLORS.textDark }}>Credit</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={{
-                                backgroundColor: type === 'debit' ? COLORS.danger : 'transparent',
-                                padding: 10,
-                                borderRadius: 8,
-                                borderWidth: 1,
-                                borderColor: COLORS.border,
-                                marginHorizontal: 5,
-                            }}
-                            onPress={() => setType('debit')}
-                        >
-                            <Text style={{ color: type === 'debit' ? 'white' : COLORS.textDark }}>Debit</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <TextInput
-                        style={{
-                            borderWidth: 1,
-                            borderColor: COLORS.border,
-                            borderRadius: 8,
-                            padding: 10,
-                            marginVertical: 8,
-                        }}
-                        placeholder="Amount (₹)"
-                        keyboardType="numeric"
-                        value={amount}
-                        onChangeText={setAmount}
-                    />
-
-                    <TextInput
-                        style={{
-                            borderWidth: 1,
-                            borderColor: COLORS.border,
-                            borderRadius: 8,
-                            padding: 10,
-                            marginVertical: 8,
-                            height: 80,
-                        }}
-                        placeholder="Description (optional)"
-                        multiline
-                        value={description}
-                        onChangeText={setDescription}
-                    />
-                    <Text style={{ marginTop: 8, fontWeight: '600' }}>Category</Text>
-
-                    <TextInput
-                        placeholder="Enter category or select existing"
-                        value={category}
-                        onChangeText={setCategory}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: COLORS.border,
-                            borderRadius: 8,
-                            padding: 10,
-                            marginVertical: 8,
-                        }}
-                    />
-
-                    {categories.length > 0 && (
-                        <FlatList
-                            data={categories.filter((c) => c.toLowerCase().includes(category.toLowerCase()))}
-                            keyExtractor={(item) => item}
-                            horizontal
-                            style={{ marginVertical: 8 }}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity
-                                    onPress={() => setCategory(item)}
-                                    style={{
-                                        backgroundColor: COLORS.primary,
-                                        paddingVertical: 6,
-                                        paddingHorizontal: 12,
-                                        borderRadius: 20,
-                                        marginRight: 8,
-                                    }}
-                                >
-                                    <Text style={{ color: 'white' }}>{item}</Text>
-                                </TouchableOpacity>
-                            )}
-                        />
-                    )}
-
-                    {/* 📷 Image Section */}
-                    <Text style={{ marginTop: 10, fontWeight: '600' }}>Photos (max 4)</Text>
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginVertical: 10 }}>
-                        {images.map((uri, index) => (
-                            <View key={index} style={{ position: 'relative', marginRight: 10, marginBottom: 10 }}>
-                                <Image
-                                    source={{ uri }}
-                                    style={{ width: 70, height: 70, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border }}
-                                />
-                                <TouchableOpacity
-                                    onPress={() => removeImage(uri)}
-                                    style={{
-                                        position: 'absolute',
-                                        top: -8,
-                                        right: -8,
-                                        backgroundColor: COLORS.danger,
-                                        borderRadius: 12,
-                                        paddingHorizontal: 4,
-                                    }}
-                                >
-                                    <Text style={{ color: 'white', fontSize: 12 }}>×</Text>
-                                </TouchableOpacity>
-                            </View>
-                        ))}
-                        {images.length < 4 && (
-                            <View style={{ flexDirection: 'row', gap: 10 }}>
-                                <TouchableOpacity
-                                    onPress={pickImage}
-                                    style={{
-                                        width: 70,
-                                        height: 70,
-                                        backgroundColor: COLORS.border,
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        borderRadius: 8,
-                                    }}
-                                >
-                                    <Text>📁</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={captureImage}
-                                    style={{
-                                        width: 70,
-                                        height: 70,
-                                        backgroundColor: COLORS.border,
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        borderRadius: 8,
-                                    }}
-                                >
-                                    <Text>📷</Text>
-                                </TouchableOpacity>
-                            </View>
-                        )}
-                    </View>
-
-
-                    {/* Date and Time Picker */}
-                    <TouchableOpacity
-                        onPress={showDateTimePicker}
-                        style={{
-                            padding: 10,
-                            borderWidth: 1,
-                            borderColor: COLORS.border,
-                            borderRadius: 8,
-                            marginVertical: 8,
-                        }}
+                    <ScrollView
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={{ paddingBottom: 20 }}
                     >
-                        <Text>Select Date & Time:</Text>
-                        <Text style={{ color: COLORS.textDark, fontWeight: '500', marginTop: 4 }}>
-                            {date.toLocaleString()}
+                        <Text
+                            style={{
+                                fontSize: 20,
+                                fontWeight: '700',
+                                color: theme.textDark,
+                                textAlign: 'center',
+                                marginBottom: 10,
+                            }}
+                        >
+                            Add Transaction
                         </Text>
-                    </TouchableOpacity>
 
+                        {/* Credit / Debit Toggle */}
+                        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
+                            <TouchableOpacity
+                                onPress={() => setType('credit')}
+                                style={{
+                                    flex: 1,
+                                    paddingVertical: 10,
+                                    backgroundColor:
+                                        type === 'credit' ? theme.success : theme.card,
+                                    borderWidth: 1,
+                                    borderColor:
+                                        type === 'credit' ? theme.success : theme.border,
+                                    borderRadius: 8,
+                                }}
+                            >
+                                <Text
+                                    style={{
+                                        color: type === 'credit' ? '#fff' : theme.textDark,
+                                        textAlign: 'center',
+                                        fontWeight: '600',
+                                    }}
+                                >
+                                    Credit
+                                </Text>
+                            </TouchableOpacity>
 
-                    {/* {showPicker && visible && (
-                        <DateTimePicker
-                            value={date}
-                            mode="datetime"
-                            display="default"
-                            onChange={onChangeDate}
+                            <TouchableOpacity
+                                onPress={() => setType('debit')}
+                                style={{
+                                    flex: 1,
+                                    paddingVertical: 10,
+                                    backgroundColor:
+                                        type === 'debit' ? theme.danger : theme.card,
+                                    borderWidth: 1,
+                                    borderColor:
+                                        type === 'debit' ? theme.danger : theme.border,
+                                    borderRadius: 8,
+                                }}
+                            >
+                                <Text
+                                    style={{
+                                        color: type === 'debit' ? '#fff' : theme.textDark,
+                                        textAlign: 'center',
+                                        fontWeight: '600',
+                                    }}
+                                >
+                                    Debit
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Inputs */}
+                        <StyledInput
+                            placeholder="Amount (₹)"
+                            value={amount}
+                            onChangeText={setAmount}
+                            keyboardType="numeric"
+                            theme={theme}
                         />
-                    )} */}
+                        <StyledInput
+                            placeholder="Description (optional)"
+                            value={description}
+                            onChangeText={setDescription}
+                            multiline
+                            theme={theme}
+                        />
+                        <StyledInput
+                            placeholder="Category"
+                            value={category}
+                            onChangeText={setCategory}
+                            theme={theme}
+                        />
 
-                    <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
-                        <Button title="Cancel" onPress={() => { setShowPicker(false); onClose(); }} />
-                        <Button title="Save" onPress={handleSave} color={COLORS.primary} />
-                    </View>
+                        {/* Suggested Categories */}
+                        {categories.length > 0 && (
+                            <FlatList
+                                data={categories.filter((c) =>
+                                    c.toLowerCase().includes(category.toLowerCase())
+                                )}
+                                keyExtractor={(item) => item}
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={{ marginBottom: 10 }}
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity
+                                        onPress={() => setCategory(item)}
+                                        style={{
+                                            backgroundColor: theme.primary,
+                                            paddingVertical: 6,
+                                            paddingHorizontal: 14,
+                                            borderRadius: 20,
+                                            marginRight: 8,
+                                        }}
+                                    >
+                                        <Text style={{ color: '#fff' }}>{item}</Text>
+                                    </TouchableOpacity>
+                                )}
+                            />
+                        )}
+
+                        {/* Photos */}
+                        <Text style={{ color: theme.textDark, fontWeight: '600', marginBottom: 6 }}>
+                            Photos (max 4)
+                        </Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                            {images.map((uri, i) => (
+                                <View key={i} style={{ position: 'relative' }}>
+                                    <Image
+                                        source={{ uri }}
+                                        style={{
+                                            width: 70,
+                                            height: 70,
+                                            borderRadius: 10,
+                                            borderWidth: 1,
+                                            borderColor: theme.border,
+                                        }}
+                                    />
+                                    <TouchableOpacity
+                                        onPress={() => removeImage(uri)}
+                                        style={{
+                                            position: 'absolute',
+                                            top: -6,
+                                            right: -6,
+                                            backgroundColor: theme.danger,
+                                            borderRadius: 12,
+                                            paddingHorizontal: 4,
+                                        }}
+                                    >
+                                        <Text style={{ color: '#fff', fontSize: 12 }}>×</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            ))}
+
+                            {images.length < 4 && (
+                                <View style={{ flexDirection: 'row', gap: 10 }}>
+                                    <UploadBox icon="📁" onPress={pickImage} theme={theme} />
+                                    <UploadBox icon="📷" onPress={captureImage} theme={theme} />
+                                </View>
+                            )}
+                        </View>
+
+                        {/* Date Picker */}
+                        <TouchableOpacity
+                            onPress={showDateTimePicker}
+                            style={{
+                                borderWidth: 1,
+                                borderColor: theme.border,
+                                borderRadius: 10,
+                                padding: 12,
+                                marginTop: 16,
+                            }}
+                        >
+                            <Text style={{ color: theme.textDark }}>Select Date & Time:</Text>
+                            <Text
+                                style={{
+                                    color: theme.primary,
+                                    fontWeight: '600',
+                                    marginTop: 4,
+                                }}
+                            >
+                                {date.toLocaleString()}
+                            </Text>
+                        </TouchableOpacity>
+
+                        {/* Buttons */}
+                        <View
+                            style={{
+                                flexDirection: 'row',
+                                justifyContent: 'space-between',
+                                marginTop: 20,
+                                gap: 10,
+                            }}
+                        >
+                            <CustomButton
+                                title="Cancel"
+                                onPress={() => {
+                                    setShowPicker(false);
+                                    onClose();
+                                }}
+                                style={{
+                                    flex: 1,
+                                    backgroundColor: theme.card,
+                                    borderWidth: 1,
+                                    borderColor: theme.border,
+                                }}
+                                textColor={theme.textDark} // ✅ ensures visibility on light backgrounds
+                            />
+                            <CustomButton
+                                title="Save"
+                                onPress={handleSave}
+                                style={{ flex: 1, backgroundColor: theme.primary }}
+                            />
+                        </View>
+
+                    </ScrollView>
                 </View>
             </View>
         </Modal>
     );
 }
+
+/* ---------- Small Reusable Components ---------- */
+const StyledInput = ({
+    placeholder,
+    value,
+    onChangeText,
+    multiline,
+    keyboardType,
+    theme,
+}: any) => (
+    <TextInput
+        placeholder={placeholder}
+        placeholderTextColor={theme.textLight}
+        value={value}
+        onChangeText={onChangeText}
+        multiline={multiline}
+        keyboardType={keyboardType}
+        style={{
+            borderWidth: 1,
+            borderColor: theme.border,
+            borderRadius: 10,
+            padding: 12,
+            color: theme.textDark,
+            marginBottom: 10,
+            height: multiline ? 80 : undefined,
+            textAlignVertical: multiline ? 'top' : 'center',
+        }}
+    />
+);
+
+const UploadBox = ({ icon, onPress, theme }: any) => (
+    <TouchableOpacity
+        onPress={onPress}
+        style={{
+            width: 70,
+            height: 70,
+            backgroundColor: theme.border,
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderRadius: 10,
+            borderWidth: 1,
+            borderColor: theme.border,
+        }}
+    >
+        <Text style={{ fontSize: 18 }}>{icon}</Text>
+    </TouchableOpacity>
+);

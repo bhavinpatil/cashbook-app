@@ -1,19 +1,18 @@
 // app/(tabs)/books.tsx
 
-
 import React, { useState, useCallback } from 'react';
-import { Text, FlatList, TouchableOpacity, StyleSheet, View } from 'react-native';
+import { Text, FlatList, TouchableOpacity, StyleSheet, View, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import ScreenContainer from '../../components/ScreenContainer';
-import { GLOBAL_STYLES } from '../../constants/theme';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface Book {
   id: string;
   name: string;
   businessId: string;
+  businessName?: string;
 }
 
 interface Business {
@@ -24,23 +23,18 @@ interface Business {
 export default function BooksScreen() {
   const router = useRouter();
   const { theme } = useTheme();
-
-  const [books, setBooks] = useState<(Book & { businessName: string })[]>([]);
+  const [books, setBooks] = useState<Book[]>([]);
 
   const loadBooks = async () => {
     try {
       const booksData = await AsyncStorage.getItem('books');
       const businessesData = await AsyncStorage.getItem('businesses');
-
       const allBooks: Book[] = booksData ? JSON.parse(booksData) : [];
       const allBusinesses: Business[] = businessesData ? JSON.parse(businessesData) : [];
 
       const combined = allBooks.map((book) => {
         const business = allBusinesses.find((b) => b.id === book.businessId);
-        return {
-          ...book,
-          businessName: business ? business.name : 'Unknown Business',
-        };
+        return { ...book, businessName: business ? business.name : 'Unknown' };
       });
 
       setBooks(combined);
@@ -49,39 +43,43 @@ export default function BooksScreen() {
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      loadBooks();
-    }, [])
-  );
+  useFocusEffect(useCallback(() => { loadBooks(); }, []));
 
-  const renderItem = ({ item }: { item: Book & { businessName: string } }) => (
-    <TouchableOpacity
-      style={[
-        styles.item,
-        { backgroundColor: theme.card, borderColor: theme.border },
-      ]}
-      onPress={() =>
-        router.push({
-          pathname: '/transactions',
-          params: { bookId: item.id, bookName: item.name },
-        })
-      }
-      activeOpacity={0.8}
-    >
-      <Text style={[styles.bookName, { color: theme.textDark }]}>{item.name}</Text>
-      <Text style={[styles.businessName, { color: theme.textLight }]}>
-        🏢 {item.businessName}
-      </Text>
-    </TouchableOpacity>
-  );
+  const renderItem = ({ item }: { item: Book }) => {
+    // ✅ Same animation logic as Businesses screen
+    const scale = new Animated.Value(0.9);
+    const opacity = new Animated.Value(0);
+
+    Animated.timing(scale, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+    Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+
+    return (
+      <Animated.View style={{ transform: [{ scale }], opacity }}>
+        <TouchableOpacity
+          style={[
+            styles.item,
+            { backgroundColor: theme.card, borderColor: theme.border },
+          ]}
+          activeOpacity={0.85}
+          onPress={() =>
+            router.push({
+              pathname: '/transactions',
+              params: { bookId: item.id, bookName: item.name },
+            })
+          }
+        >
+          <Text style={[styles.bookName, { color: theme.textDark }]}>{item.name}</Text>
+          <Text style={[styles.businessName, { color: theme.textLight }]}>
+            🏢 {item.businessName}
+          </Text>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
 
   return (
-    <ScreenContainer hasFloatingButtons={false}>
-      <Text style={[GLOBAL_STYLES.title, { color: theme.textDark }]}>Books</Text>
-      <Text style={[GLOBAL_STYLES.subtitle, { color: theme.textLight }]}>
-        Tap a book to view its transactions
-      </Text>
+    <ScreenContainer>
+      <Text style={[styles.title, { color: theme.textDark }]}>Books</Text>
 
       <FlatList
         data={books}
@@ -90,8 +88,9 @@ export default function BooksScreen() {
         contentContainerStyle={styles.listContainer}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={[GLOBAL_STYLES.subtitle, { textAlign: 'center', color: theme.textLight }]}>
-              No books found. You can add new ones from Settings.
+            <Text style={{ fontSize: 50, color: theme.textLight }}>📚</Text>
+            <Text style={[styles.emptyText, { color: theme.textLight }]}>
+              No books yet. Add a new one from Settings.
             </Text>
           </View>
         }
@@ -107,13 +106,10 @@ const styles = StyleSheet.create({
     paddingBottom: 80,
   },
   item: {
-    padding: 14,
-    borderRadius: 10,
+    padding: 16,
+    borderRadius: 12,
     borderWidth: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    elevation: 1,
   },
   bookName: {
     fontSize: 18,
@@ -124,6 +120,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   emptyContainer: {
-    marginTop: 24,
+    alignItems: 'center',
+    marginTop: 40,
+  },
+  emptyText: {
+    fontSize: 14,
+    marginTop: 10,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 10,
   },
 });

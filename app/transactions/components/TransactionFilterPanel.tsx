@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, View, Text, TouchableOpacity, ScrollView } from 'react-native';
-import { COLORS } from '@/constants/theme';
+import {
+  Modal,
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -20,9 +27,12 @@ export default function TransactionFilterPanel({
   initialFilters,
   categories,
 }: Props) {
+  const { theme } = useTheme();
   const [sortBy, setSortBy] = useState<string | undefined>(initialFilters?.sortBy);
   const [type, setType] = useState<string | undefined>(initialFilters?.type);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(initialFilters?.categories || []);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    initialFilters?.categories || []
+  );
 
   useEffect(() => {
     setSortBy(initialFilters?.sortBy);
@@ -39,11 +49,7 @@ export default function TransactionFilterPanel({
   };
 
   const handleApply = () => {
-    onApply({
-      sortBy,
-      type,
-      categories: selectedCategories,
-    });
+    onApply({ sortBy, type, categories: selectedCategories });
     onClose();
   };
 
@@ -56,120 +62,89 @@ export default function TransactionFilterPanel({
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'flex-end' }}>
+      <View style={[styles.overlay]}>
         <View
-          style={{
-            backgroundColor: 'white',
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            padding: 20,
-            maxHeight: '80%',
-          }}
+          style={[
+            styles.modalContainer,
+            { backgroundColor: theme.card, borderColor: theme.border },
+          ]}
         >
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Filters</Text>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: theme.textDark }]}>Filters</Text>
             <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={22} color="black" />
+              <Ionicons name="close" size={22} color={theme.textDark} />
             </TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} style={{ marginTop: 16 }}>
+          {/* Content */}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 40 }}
+          >
             {/* Type Filter */}
-            <Text style={{ fontWeight: '600', marginBottom: 8 }}>Transaction Type</Text>
-            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 20 }}>
+            <FilterSection title="Transaction Type" theme={theme}>
               {['all', 'credit', 'debit'].map((t) => (
-                <TouchableOpacity
+                <FilterChip
                   key={t}
+                  label={t}
+                  selected={type === t}
                   onPress={() => setType(t)}
-                  style={{
-                    paddingVertical: 6,
-                    paddingHorizontal: 14,
-                    borderRadius: 20,
-                    backgroundColor: type === t ? COLORS.primary : COLORS.gray2,
-                  }}
-                >
-                  <Text style={{ color: type === t ? 'white' : 'black' }}>{t}</Text>
-                </TouchableOpacity>
+                  theme={theme}
+                />
               ))}
-            </View>
+            </FilterSection>
 
             {/* Sort Filter */}
-            <Text style={{ fontWeight: '600', marginBottom: 8 }}>Sort By</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+            <FilterSection title="Sort By" theme={theme}>
               {['newest', 'oldest', 'highest', 'lowest'].map((s) => (
-                <TouchableOpacity
+                <FilterChip
                   key={s}
+                  label={s}
+                  selected={sortBy === s}
                   onPress={() => setSortBy(s)}
-                  style={{
-                    paddingVertical: 6,
-                    paddingHorizontal: 14,
-                    borderRadius: 20,
-                    backgroundColor: sortBy === s ? COLORS.primary : COLORS.gray2,
-                  }}
-                >
-                  <Text style={{ color: sortBy === s ? 'white' : 'black' }}>{s}</Text>
-                </TouchableOpacity>
+                  theme={theme}
+                />
               ))}
-            </View>
+            </FilterSection>
 
-            {/* Category Filter */}
+            {/* Categories */}
             {categories.length > 0 && (
-              <>
-                <Text style={{ fontWeight: '600', marginBottom: 8 }}>Categories</Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
-                  {categories.map((cat) => (
-                    <TouchableOpacity
-                      key={cat}
-                      onPress={() => toggleCategory(cat)}
-                      style={{
-                        paddingVertical: 6,
-                        paddingHorizontal: 14,
-                        borderRadius: 20,
-                        backgroundColor: selectedCategories.includes(cat)
-                          ? COLORS.primary
-                          : COLORS.gray2,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: selectedCategories.includes(cat) ? 'white' : 'black',
-                        }}
-                      >
-                        {cat}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </>
+              <FilterSection title="Categories" theme={theme}>
+                {categories.map((cat) => (
+                  <FilterChip
+                    key={cat}
+                    label={cat}
+                    selected={selectedCategories.includes(cat)}
+                    onPress={() => toggleCategory(cat)}
+                    theme={theme}
+                  />
+                ))}
+              </FilterSection>
             )}
           </ScrollView>
 
           {/* Action Buttons */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 , marginBottom: 40}}>
+          <View style={styles.actionsRow}>
             <TouchableOpacity
               onPress={handleReset}
-              style={{
-                flex: 1,
-                backgroundColor: COLORS.gray2,
-                paddingVertical: 10,
-                borderRadius: 8,
-                alignItems: 'center',
-                marginRight: 8,
-              }}
+              style={[
+                styles.actionButton,
+                { backgroundColor: theme.card, borderColor: theme.border },
+              ]}
             >
-              <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Reset</Text>
+              <Text style={[styles.actionText, { color: theme.textDark }]}>
+                Reset
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleApply}
-              style={{
-                flex: 1,
-                backgroundColor: COLORS.primary,
-                paddingVertical: 10,
-                borderRadius: 8,
-                alignItems: 'center',
-              }}
+              style={[
+                styles.actionButton,
+                { backgroundColor: theme.primary },
+              ]}
             >
-              <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>Apply</Text>
+              <Text style={[styles.actionText, { color: '#fff' }]}>Apply</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -177,3 +152,116 @@ export default function TransactionFilterPanel({
     </Modal>
   );
 }
+
+/* ---------------------- Helper Components ---------------------- */
+
+const FilterSection = ({
+  title,
+  children,
+  theme,
+}: {
+  title: string;
+  children: React.ReactNode;
+  theme: any;
+}) => (
+  <View style={{ marginBottom: 20 }}>
+    <Text
+      style={{
+        fontWeight: '600',
+        fontSize: 15,
+        marginBottom: 8,
+        color: theme.textLight,
+      }}
+    >
+      {title}
+    </Text>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      {children}
+    </View>
+  </View>
+);
+
+const FilterChip = ({
+  label,
+  selected,
+  onPress,
+  theme,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+  theme: any;
+}) => (
+  <TouchableOpacity
+    onPress={onPress}
+    activeOpacity={0.8}
+    style={{
+      paddingVertical: 6,
+      paddingHorizontal: 14,
+      borderRadius: 20,
+      backgroundColor: selected
+        ? theme.primary
+        : theme.name === 'dark'
+        ? theme.border
+        : theme.card,
+      borderWidth: selected ? 0 : 1,
+      borderColor: selected ? theme.primary : theme.border,
+      shadowColor: selected ? theme.primary : '#000',
+      shadowOpacity: selected ? 0.3 : 0.05,
+      shadowRadius: 3,
+      elevation: selected ? 3 : 1,
+    }}
+  >
+    <Text
+      style={{
+        color: selected ? '#fff' : theme.textDark,
+        fontWeight: selected ? '600' : '400',
+        textTransform: 'capitalize',
+      }}
+    >
+      {label}
+    </Text>
+  </TouchableOpacity>
+);
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    maxHeight: '85%',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    gap: 10,
+    paddingBottom: 10,
+  },
+  actionButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  actionText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

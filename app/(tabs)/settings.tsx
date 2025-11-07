@@ -1,9 +1,8 @@
-// app/(tabs)/settings.tsx
-import React, { useCallback, useState } from 'react';
-import { View, Modal, TextInput, Alert, StyleSheet } from 'react-native';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
+import { View, Alert, StyleSheet, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import ScreenContainer from '../../components/ScreenContainer';
+import ScrollableScreenContainer from '../../components/ScrollableScreenContainer';
 import BusinessSection from '../components/settings/BusinessSection';
 import BookSection from '../components/settings/BookSection';
 import ThemeSelector from '../components/settings/ThemeSelector';
@@ -12,7 +11,6 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { Business, Book } from '../types/types';
 import AddBusinessModal from '../components/settings/AddBusinessModal';
 import AddBookModal from '../components/settings/AddBookModal';
-import ScrollableScreenContainer from '../../components/ScrollableScreenContainer';
 
 type SelectedItem =
   | { id: string; type: 'business' }
@@ -31,7 +29,33 @@ export default function SettingsScreen() {
   const [selectedBusinessId, setSelectedBusinessId] = useState('');
   const { theme } = useTheme();
 
-  // ✅ Load businesses & books from AsyncStorage
+  // ✅ Animation refs (same style as Business screen)
+  const scaleBusiness = useRef(new Animated.Value(0.9)).current;
+  const opacityBusiness = useRef(new Animated.Value(0)).current;
+  const scaleBooks = useRef(new Animated.Value(0.9)).current;
+  const opacityBooks = useRef(new Animated.Value(0)).current;
+  const scaleTheme = useRef(new Animated.Value(0.9)).current;
+  const opacityTheme = useRef(new Animated.Value(0)).current;
+
+  // ✅ Animate once when screen mounts (not on each update)
+  useEffect(() => {
+    Animated.stagger(100, [
+      Animated.parallel([
+        Animated.timing(scaleBusiness, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.timing(opacityBusiness, { toValue: 1, duration: 300, useNativeDriver: true }),
+      ]),
+      Animated.parallel([
+        Animated.timing(scaleBooks, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.timing(opacityBooks, { toValue: 1, duration: 300, useNativeDriver: true }),
+      ]),
+      Animated.parallel([
+        Animated.timing(scaleTheme, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.timing(opacityTheme, { toValue: 1, duration: 300, useNativeDriver: true }),
+      ]),
+    ]).start();
+  }, []);
+
+  // ✅ Load data from AsyncStorage
   const loadData = async (): Promise<void> => {
     try {
       const bData = await AsyncStorage.getItem('businesses');
@@ -58,8 +82,8 @@ export default function SettingsScreen() {
     }, [])
   );
 
-  // ✅ Delete Business
-  const deleteBusiness = async (id: string) => {
+  // ✅ Delete Business with confirmation
+  const deleteBusiness = (id: string) => {
     Alert.alert('Delete Business?', 'This will remove all its books as well.', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -83,8 +107,8 @@ export default function SettingsScreen() {
     ]);
   };
 
-  // ✅ Delete Book
-  const deleteBook = async (id: string) => {
+  // ✅ Delete Book with confirmation
+  const deleteBook = (id: string) => {
     Alert.alert('Delete Book?', '', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -101,7 +125,7 @@ export default function SettingsScreen() {
     ]);
   };
 
-  // ✅ Save Edited Name
+  // ✅ Save edited name
   const handleEditSave = async (newName: string): Promise<void> => {
     if (!selectedItem || !newName.trim()) return;
 
@@ -123,29 +147,39 @@ export default function SettingsScreen() {
     loadData();
   };
 
+  // ✅ UI
   return (
     <ScrollableScreenContainer>
       {/* --- Businesses --- */}
-      <BusinessSection
-        businesses={businesses}
-        onAdd={() => setAddBusinessVisible(true)}
-        onEdit={(id) => {
-          setSelectedItem({ id, type: 'business' });
-          setEditVisible(true);
-        }}
-        onDelete={deleteBusiness}
-      />
+      <Animated.View style={{ transform: [{ scale: scaleBusiness }], opacity: opacityBusiness }}>
+        <BusinessSection
+          businesses={businesses}
+          onAdd={() => setAddBusinessVisible(true)}
+          onEdit={(id) => {
+            setSelectedItem({ id, type: 'business' });
+            setEditVisible(true);
+          }}
+          onDelete={deleteBusiness} // now uses Alert again
+        />
+      </Animated.View>
 
       {/* --- Books --- */}
-      <BookSection
-        books={books}
-        onAdd={() => setAddBookVisible(true)}
-        onEdit={(id) => {
-          setSelectedItem({ id, type: 'book' });
-          setEditVisible(true);
-        }}
-        onDelete={deleteBook}
-      />
+      <Animated.View style={{ transform: [{ scale: scaleBooks }], opacity: opacityBooks }}>
+        <BookSection
+          books={books}
+          onAdd={() => setAddBookVisible(true)}
+          onEdit={(id) => {
+            setSelectedItem({ id, type: 'book' });
+            setEditVisible(true);
+          }}
+          onDelete={deleteBook} // restored Alert confirm
+        />
+      </Animated.View>
+
+      {/* --- Theme Selector --- */}
+      <Animated.View style={{ transform: [{ scale: scaleTheme }], opacity: opacityTheme }}>
+        <ThemeSelector />
+      </Animated.View>
 
       {/* --- Add Business Modal --- */}
       <AddBusinessModal
@@ -189,9 +223,6 @@ export default function SettingsScreen() {
         }}
       />
 
-      {/* --- Theme Selector --- */}
-      <ThemeSelector />
-
       {/* --- Edit Modal --- */}
       <EditNameModal
         visible={editVisible}
@@ -203,3 +234,5 @@ export default function SettingsScreen() {
     </ScrollableScreenContainer>
   );
 }
+
+const styles = StyleSheet.create({});

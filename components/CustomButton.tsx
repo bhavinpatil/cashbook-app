@@ -1,3 +1,5 @@
+// components/CustomButton.tsx
+
 import React from 'react';
 import { Pressable, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
@@ -9,6 +11,7 @@ interface CustomButtonProps {
   style?: ViewStyle | ViewStyle[];
   disabled?: boolean;
   loading?: boolean;
+  textColor?: string; // ✅ added
 }
 
 export default function CustomButton({
@@ -18,6 +21,7 @@ export default function CustomButton({
   style,
   disabled = false,
   loading = false,
+  textColor, // ✅ added
 }: CustomButtonProps) {
   const { theme } = useTheme();
 
@@ -30,13 +34,10 @@ export default function CustomButton({
       ? theme.card
       : 'transparent';
 
-  const borderColor =
-    type === 'outline' ? theme.primary : 'transparent';
+  const borderColor = type === 'outline' ? theme.primary : 'transparent';
 
-  const textColor =
-    type === 'primary' || type === 'danger'
-      ? 'white'
-      : theme.textDark;
+  const defaultTextColor =
+    type === 'primary' || type === 'danger' ? '#fff' : theme.textDark;
 
   return (
     <Pressable
@@ -51,13 +52,13 @@ export default function CustomButton({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={textColor} />
+        <ActivityIndicator color={textColor || defaultTextColor} />
       ) : (
         <Text
           style={[
             styles.text,
             type === 'small' && { fontSize: 14 },
-            { color: textColor },
+            { color: textColor || defaultTextColor },
           ]}
         >
           {title}
@@ -75,7 +76,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     shadowColor: '#000',
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.1,
     shadowRadius: 3,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,

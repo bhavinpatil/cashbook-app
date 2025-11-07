@@ -1,3 +1,5 @@
+// app/transactions/index.tsx
+
 import React, { useState } from 'react';
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -89,7 +91,7 @@ export default function TransactionsScreen() {
   if (loading) return <ActivityIndicator style={{ marginTop: 50 }} />;
 
   return (
-    <ScreenContainer scrollable={false} hasFloatingButtons={false}>
+    <ScreenContainer hasFloatingButtons={false}>
       <TransactionSummary
         balance={balance}
         totalCredit={totalCredit}
@@ -137,9 +139,11 @@ export default function TransactionsScreen() {
         <CustomButton
           title="🔍 Filter"
           onPress={() => setFilterVisible(true)}
-          style={[styles.actionButton, { backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border }]}
+          style={[styles.actionButton, { backgroundColor: theme.primary }]} // ✅ uniform look
+          textColor="#fff"
         />
       </View>
+
 
       {/* Add Transaction Modal */}
       <AddTransactionModal
