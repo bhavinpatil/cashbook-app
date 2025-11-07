@@ -11,7 +11,7 @@ import {
     Dimensions,
     ScrollView,
 } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
+import { LineChart, BarChart } from 'react-native-chart-kit';
 import { useBudget } from '../hooks/useBudget';
 import dayjs from 'dayjs';
 import BudgetModal from './BudgetModal';
@@ -96,13 +96,13 @@ export default function SpendsChart({
     };
 
 
-    const getVisibleLabels = (days: number) => [
-        '1 ' + currentMonth.format('MMM'),
-        `${Math.ceil(days / 2)} ${currentMonth.format('MMM')}`,
-        `${days} ${currentMonth.format('MMM')}`,
-    ];
+    // Generate one label per day, but only show 1st, mid, and last date in chart labels
+    const labels = Array.from({ length: daysInMonth }, (_, i) => String(i + 1));
 
-    const labels = getVisibleLabels(daysInMonth);
+    // Keep chart neat — only render visible text on 1st, mid, and last day
+    const visibleLabelIndexes = [0, Math.floor(daysInMonth / 2), daysInMonth - 1];
+
+
 
     const chartConfig = {
         backgroundColor: '#ffffff',
@@ -139,40 +139,74 @@ export default function SpendsChart({
                 </Text>
 
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <LineChart
-                        data={{
-                            labels: isDaily ? labels : monthlyLabels,
-                            datasets: [
-                                {
-                                    data: isDaily ? dailyDebit : monthlySpends,
-                                    color: () => '#e63946',
-                                    strokeWidth: 2,
-                                    withDots: false,
-                                },
-                                isDaily
-                                    ? {
-                                        data: Array(daysInMonth).fill(budget),
-                                        color: () => '#888',
-                                        strokeWidth: 1,
-                                        withDots: false,
-                                    }
-                                    : undefined,
-                            ].filter(Boolean) as any,
-                            legend: isDaily ? ['Spends', 'Budget'] : ['Total Spends'],
-                        }}
-                        width={Math.max(screenWidth - 40, labels.length * 25)}
-                        height={260}
-                        yAxisLabel="₹"
-                        formatYLabel={v => formatYAxis(Number(v))}
-                        chartConfig={chartConfig}
-                        fromZero
-                        withOuterLines={false}
-                        withInnerLines={true}
-                        withHorizontalLabels={true}
-                        bezier
-                        segments={5}
-                        style={{ borderRadius: 12, marginLeft: -5 }}
-                    />
+                    {isDaily ? (
+                        // 📈 Daily Line Chart
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                            <LineChart
+                                data={{
+                                    labels,
+                                    datasets: [
+                                        {
+                                            data: dailyDebit,
+                                            color: () => '#e63946',
+                                            strokeWidth: 2,
+                                            withDots: false,
+                                        },
+                                        {
+                                            data: Array(daysInMonth).fill(budget),
+                                            color: () => '#888',
+                                            strokeWidth: 1,
+                                            withDots: false,
+                                        },
+                                    ],
+                                    legend: ['Spends', 'Budget'],
+                                }}
+                                width={Math.max(screenWidth - 40, labels.length * 25)}
+                                height={260}
+                                yAxisLabel="₹"
+                                formatYLabel={(v) => formatYAxis(Number(v))}
+                                formatXLabel={(xValue) => {
+                                    const day = Number(xValue);
+                                    const visibleDays = [1, Math.ceil(daysInMonth / 2), daysInMonth];
+                                    return visibleDays.includes(day)
+                                        ? `${day} ${currentMonth.format('MMM')}`
+                                        : '';
+                                }}
+                                chartConfig={chartConfig}
+                                fromZero
+                                withOuterLines={false}
+                                withInnerLines
+                                withHorizontalLabels
+                                bezier
+                                segments={5}
+                                style={{ borderRadius: 12, marginLeft: -5 }}
+                            />
+                        </ScrollView>
+                    ) : (
+                        // 📊 Monthly Bar Chart
+                        <BarChart
+                            data={{
+                                labels: monthlyLabels,
+                                datasets: [{ data: monthlySpends }],
+                            }}
+                            width={screenWidth - 40}
+                            height={260}
+                            yAxisLabel="₹"
+                            yAxisSuffix=''
+                            fromZero
+                            showValuesOnTopOfBars
+                            withInnerLines
+                            chartConfig={{
+                                ...chartConfig,
+                                barPercentage: 0.6,
+                                color: (opacity = 1) => `rgba(230, 57, 70, ${opacity})`,
+                                labelColor: (opacity = 1) => `rgba(60, 60, 60, ${opacity})`,
+                            }}
+                            style={{ borderRadius: 12 }}
+                        />
+                    )}
+
+
                 </ScrollView>
 
                 {/* Toggle */}
