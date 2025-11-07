@@ -10,12 +10,15 @@ import {
     Image,
     Alert,
     StyleSheet,
+    Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { COLORS } from '@/constants/theme';
 import CustomButton from '@/components/CustomButton';
 import { Transaction } from '../types';
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import dayjs from 'dayjs';
 
 interface Props {
     visible: boolean;
@@ -194,23 +197,68 @@ export default function EditTransactionModal({
                             </TouchableOpacity>
                         </ScrollView>
 
-                        {/* Date */}
-                        <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+                        {/* Date & Time Selector */}
+                        <TouchableOpacity
+                            onPress={() => {
+                                if (Platform.OS === 'android') {
+                                    // Step 1: pick date
+                                    DateTimePickerAndroid.open({
+                                        value: date,
+                                        mode: 'date',
+                                        is24Hour: false,
+                                        onChange: (_: any, selectedDate?: Date) => {
+                                            if (selectedDate) {
+                                                // Step 2: pick time
+                                                DateTimePickerAndroid.open({
+                                                    value: selectedDate,
+                                                    mode: 'time',
+                                                    is24Hour: false,
+                                                    onChange: (_: any, selectedTime?: Date) => {
+                                                        if (selectedTime) {
+                                                            const finalDate = new Date(
+                                                                selectedDate.getFullYear(),
+                                                                selectedDate.getMonth(),
+                                                                selectedDate.getDate(),
+                                                                selectedTime.getHours(),
+                                                                selectedTime.getMinutes()
+                                                            );
+                                                            setDate(finalDate);
+                                                        }
+                                                    },
+                                                });
+                                            }
+                                        },
+                                    });
+                                } else {
+                                    // iOS inline picker
+                                    setShowDatePicker(true);
+                                }
+                            }}
+                            style={{
+                                borderWidth: 1,
+                                borderColor: COLORS.border,
+                                borderRadius: 8,
+                                padding: 10,
+                                marginBottom: 10,
+                            }}
+                        >
                             <Text style={{ color: COLORS.textLight, marginBottom: 5 }}>
-                                Date: {date.toDateString()}
+                                Date & Time: {dayjs(date).format('DD MMM YYYY, hh:mm A')}
                             </Text>
                         </TouchableOpacity>
-                        {showDatePicker && (
+
+                        {/* iOS Inline Picker */}
+                        {Platform.OS === 'ios' && showDatePicker && (
                             <DateTimePicker
                                 value={date}
-                                mode="date"
-                                display="default"
+                                mode="datetime"
+                                display="spinner"
                                 onChange={(e, selectedDate) => {
-                                    setShowDatePicker(false);
                                     if (selectedDate) setDate(selectedDate);
                                 }}
                             />
                         )}
+
 
                         {/* Images */}
                         <Text style={{ color: COLORS.textLight, marginTop: 10 }}>Images</Text>

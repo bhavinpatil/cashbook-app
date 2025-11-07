@@ -7,6 +7,7 @@ import { Transaction } from '../types';
 import { randomUUID } from 'expo-crypto';
 import { Keyboard } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 
 interface Props {
     visible: boolean;
@@ -16,7 +17,7 @@ interface Props {
     defaultType?: 'credit' | 'debit';
 }
 
-export default function AddTransactionModal({ visible, onClose, onAdd, categories = [], defaultType = 'credit',}: Props) {
+export default function AddTransactionModal({ visible, onClose, onAdd, categories = [], defaultType = 'credit', }: Props) {
     const [type, setType] = useState<'credit' | 'debit'>('credit');
     const [amount, setAmount] = useState('');
     const [description, setDescription] = useState('');
@@ -126,6 +127,45 @@ export default function AddTransactionModal({ visible, onClose, onAdd, categorie
         if (selectedDate) setDate(selectedDate);
         if (Platform.OS !== 'ios') setShowPicker(false);
     };
+
+    const showDateTimePicker = () => {
+        if (Platform.OS === 'android') {
+            // Step 1: Select Date
+            DateTimePickerAndroid.open({
+                value: date,
+                mode: 'date',
+                is24Hour: false,
+                onChange: (_: any, selectedDate?: Date) => {
+                    if (selectedDate) {
+                        // Step 2: Select Time
+                        DateTimePickerAndroid.open({
+                            value: selectedDate,
+                            mode: 'time',
+                            is24Hour: false,
+                            onChange: (_: any, selectedTime?: Date) => {
+                                if (selectedTime) {
+                                    // Combine selected date and time into one Date object
+                                    const finalDate = new Date(
+                                        selectedDate.getFullYear(),
+                                        selectedDate.getMonth(),
+                                        selectedDate.getDate(),
+                                        selectedTime.getHours(),
+                                        selectedTime.getMinutes()
+                                    );
+                                    setDate(finalDate);
+                                }
+                            },
+                        });
+                    }
+                },
+            });
+        } else {
+            // iOS inline picker
+            setShowPicker(true);
+        }
+    };
+
+
 
     return (
         <Modal visible={visible} transparent animationType="slide">
@@ -302,7 +342,7 @@ export default function AddTransactionModal({ visible, onClose, onAdd, categorie
 
                     {/* Date and Time Picker */}
                     <TouchableOpacity
-                        onPress={() => setShowPicker(true)}
+                        onPress={showDateTimePicker}
                         style={{
                             padding: 10,
                             borderWidth: 1,
@@ -317,14 +357,15 @@ export default function AddTransactionModal({ visible, onClose, onAdd, categorie
                         </Text>
                     </TouchableOpacity>
 
-                    {showPicker && visible && (
+
+                    {/* {showPicker && visible && (
                         <DateTimePicker
                             value={date}
                             mode="datetime"
                             display="default"
                             onChange={onChangeDate}
                         />
-                    )}
+                    )} */}
 
                     <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
                         <Button title="Cancel" onPress={() => { setShowPicker(false); onClose(); }} />
