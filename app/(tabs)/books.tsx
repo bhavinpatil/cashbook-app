@@ -135,7 +135,7 @@ export default function BooksScreen() {
   );
 
   return (
-    <ScreenContainer>
+    <ScreenContainer scrollable={false}>
       <Text style={GLOBAL_STYLES.title}>All Books</Text>
       <Text style={GLOBAL_STYLES.subtitle}>Select a book to view details</Text>
 

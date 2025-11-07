@@ -1,8 +1,8 @@
 // components/CustomButton.tsx
-
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
 import { COLORS } from '../constants/theme';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface CustomButtonProps {
   title: string;
@@ -21,27 +21,26 @@ export default function CustomButton({
   disabled = false,
   loading = false,
 }: CustomButtonProps) {
+  const { theme } = useTheme() || {};
+  const activeTheme = theme || COLORS;
+
   const getButtonStyle = () => {
     switch (type) {
       case 'outline':
-        return [styles.button, styles.outlineButton];
+        return [styles.button, { borderColor: activeTheme.primary, borderWidth: 1 }];
       case 'secondary':
-        return [styles.button, styles.secondaryButton];
+        return [styles.button, { backgroundColor: activeTheme.card }];
       default:
-        return [styles.button, styles.primaryButton];
+        return [styles.button, { backgroundColor: activeTheme.primary }];
     }
   };
 
-  const getTextStyle = () => {
-    switch (type) {
-      case 'outline':
-        return styles.outlineText;
-      case 'secondary':
-        return styles.secondaryText;
-      default:
-        return styles.primaryText;
-    }
-  };
+  const textColor =
+    type === 'outline'
+      ? activeTheme.primary
+      : type === 'secondary'
+      ? activeTheme.textDark
+      : 'white';
 
   return (
     <TouchableOpacity
@@ -51,9 +50,9 @@ export default function CustomButton({
       activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator color="white" />
+        <ActivityIndicator color={textColor} />
       ) : (
-        <Text style={getTextStyle()}>{title}</Text>
+        <Text style={[styles.text, { color: textColor }]}>{title}</Text>
       )}
     </TouchableOpacity>
   );
@@ -71,29 +70,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 4,
   },
-  primaryButton: {
-    backgroundColor: COLORS.primary,
-  },
-  secondaryButton: {
-    backgroundColor: COLORS.card,
-  },
-  outlineButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-  },
-  primaryText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  secondaryText: {
-    color: COLORS.textDark,
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  outlineText: {
-    color: COLORS.primary,
+  text: {
     fontSize: 16,
     fontWeight: '600',
   },

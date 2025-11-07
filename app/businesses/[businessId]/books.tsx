@@ -165,7 +165,7 @@ export default function BusinessBooksScreen() {
 
 
   return (
-    <ScreenContainer>
+    <ScreenContainer scrollable={false}>
       <View style={{ flex: 1 }}>
         <Text style={GLOBAL_STYLES.title}>
           {business ? business.name : 'Business'} - Books
