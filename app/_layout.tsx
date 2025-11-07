@@ -51,6 +51,13 @@ export default function RootLayout() {
           })}
         />
 
+        <Stack.Screen
+          name="insights/index"
+          options={({ route }) => ({
+            title: (route.params as { bookName?: string })?.bookName || 'Insights',
+          })}
+        />
+
 
         {/* Any modal screens */}
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />

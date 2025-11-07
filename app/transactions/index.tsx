@@ -49,45 +49,50 @@ export default function TransactionsScreen() {
   };
 
   const getFilteredTransactions = () => {
-    if (!filters) return transactions;
-    let data = [...transactions];
+    let data = [...transactions]; // copy original list
 
-    const { type, startDate, endDate, minAmount, maxAmount, sortBy, categories } = filters;
+    if (filters) {
+      const { type, startDate, endDate, minAmount, maxAmount, sortBy, categories } = filters;
 
-    // Type filter
-    if (type && type !== 'all') {
-      data = data.filter((t) => t.type === type);
-    }
+      // Type filter
+      if (type && type !== 'all') {
+        data = data.filter((t) => t.type === type);
+      }
 
-    // Date filter
-    if (startDate) data = data.filter((t) => new Date(t.date) >= startDate);
-    if (endDate) data = data.filter((t) => new Date(t.date) <= endDate);
+      // Date filter
+      if (startDate) data = data.filter((t) => new Date(t.date) >= startDate);
+      if (endDate) data = data.filter((t) => new Date(t.date) <= endDate);
 
-    // Amount filter
-    if (minAmount != null) data = data.filter((t) => t.amount >= minAmount);
-    if (maxAmount != null) data = data.filter((t) => t.amount <= maxAmount);
+      // Amount filter
+      if (minAmount != null) data = data.filter((t) => t.amount >= minAmount);
+      if (maxAmount != null) data = data.filter((t) => t.amount <= maxAmount);
 
-    // Category filter
-    if (categories?.length) data = data.filter((t) => categories.includes(t.category));
+      // Category filter
+      if (categories?.length) data = data.filter((t) => categories.includes(t.category));
 
-    // Sorting
-    switch (sortBy) {
-      case 'newest':
-        data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        break;
-      case 'oldest':
-        data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        break;
-      case 'highest':
-        data.sort((a, b) => b.amount - a.amount);
-        break;
-      case 'lowest':
-        data.sort((a, b) => a.amount - b.amount);
-        break;
+      // Sorting options from filters
+      switch (sortBy) {
+        case 'oldest':
+          data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+          break;
+        case 'highest':
+          data.sort((a, b) => b.amount - a.amount);
+          break;
+        case 'lowest':
+          data.sort((a, b) => a.amount - b.amount);
+          break;
+        default:
+          // default: newest first
+          data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      }
+    } else {
+      // ✅ Default sorting (newest first) when no filters applied
+      data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }
 
     return data;
   };
+
 
   const filteredTransactions = getFilteredTransactions();
 
