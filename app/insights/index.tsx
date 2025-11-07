@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, View, Text } from 'react-native';
 import { useRoute } from '@react-navigation/native';
-import { useTransactions } from '../transactions/hooks/useTransactions';
-import Header from './components/Header';
-import SummaryTabs from './components/SummaryTabs';
-import SpendsChart from './components/SpendsChart';
-import IncomingChart from './components/IncomingChart';
 import dayjs from 'dayjs';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useTransactions } from '@/hooks/useTransactions';
+import Header from '@/components/insights/Header';
+import IncomingChart from '@/components/insights/IncomingChart';
+import SpendsChart from '@/components/insights/SpendsChart';
+import SummaryTabs from '@/components/insights/SummaryTabs';
 
 export default function InsightsScreen() {
   const route = useRoute();

@@ -7,7 +7,7 @@ import {
     Dimensions,
 } from 'react-native';
 import { LineChart, BarChart } from 'react-native-chart-kit';
-import { useBudget } from '../hooks/useBudget';
+import { useBudget } from '@/hooks/useBudget';
 import dayjs from 'dayjs';
 import BudgetModal from './BudgetModal';
 
@@ -196,14 +196,6 @@ export default function SpendsChart({
                                     alignItems: 'center',
                                 }}
                             >
-                                <View
-                                    style={{
-                                        width: 8,
-                                        height: 8,
-                                        borderRadius: 4,
-                                        backgroundColor: '#e63946',
-                                    }}
-                                />
                             </View>
                         )}
                     </>

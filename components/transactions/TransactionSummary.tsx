@@ -1,9 +1,9 @@
 // app/transactions/components/TransactionSummary.tsx
 
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useTheme } from '../../../contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface Props {
   totalCredit: number;

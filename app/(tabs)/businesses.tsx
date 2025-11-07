@@ -4,8 +4,8 @@ import React, { useCallback, useState } from 'react';
 import { Text, FlatList, TouchableOpacity, StyleSheet, View, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import ScreenContainer from '../../components/ScreenContainer';
-import { useTheme } from '../../contexts/ThemeContext';
+import ScreenContainer from '@/components/ScreenContainer';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface Business {
   id: string;

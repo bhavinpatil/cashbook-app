@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { TextInput, StyleSheet, ViewStyle } from 'react-native';
-import { COLORS } from '../constants/theme';
+import { COLORS } from '@/constants/theme';
 
 interface InputFieldProps {
   placeholder?: string;

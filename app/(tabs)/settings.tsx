@@ -1,16 +1,16 @@
-import React, { useCallback, useState, useRef, useEffect } from 'react';
-import { View, Alert, StyleSheet, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import ScrollableScreenContainer from '../../components/ScrollableScreenContainer';
-import BusinessSection from '../components/settings/BusinessSection';
-import BookSection from '../components/settings/BookSection';
-import ThemeSelector from '../components/settings/ThemeSelector';
-import EditNameModal from '../../components/EditNameModal';
-import { useTheme } from '../../contexts/ThemeContext';
-import { Business, Book } from '../types/types';
-import AddBusinessModal from '../components/settings/AddBusinessModal';
-import AddBookModal from '../components/settings/AddBookModal';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Animated, StyleSheet } from 'react-native';
+import EditNameModal from '@/components/EditNameModal';
+import ScrollableScreenContainer from '@/components/ScrollableScreenContainer';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Book, Business } from '@/types/types';
+import AddBookModal from '@/components/settings/AddBookModal';
+import AddBusinessModal from '@/components/settings/AddBusinessModal';
+import BookSection from '@/components/settings/BookSection';
+import BusinessSection from '@/components/settings/BusinessSection';
+import ThemeSelector from '@/components/settings/ThemeSelector';
 
 type SelectedItem =
   | { id: string; type: 'business' }
@@ -150,6 +150,12 @@ export default function SettingsScreen() {
   // ✅ UI
   return (
     <ScrollableScreenContainer>
+
+      {/* --- Theme Selector --- */}
+      <Animated.View style={{ transform: [{ scale: scaleTheme }], opacity: opacityTheme, marginBottom: 20}}>
+        <ThemeSelector />
+      </Animated.View>
+
       {/* --- Businesses --- */}
       <Animated.View style={{ transform: [{ scale: scaleBusiness }], opacity: opacityBusiness }}>
         <BusinessSection
@@ -174,11 +180,6 @@ export default function SettingsScreen() {
           }}
           onDelete={deleteBook} // restored Alert confirm
         />
-      </Animated.View>
-
-      {/* --- Theme Selector --- */}
-      <Animated.View style={{ transform: [{ scale: scaleTheme }], opacity: opacityTheme }}>
-        <ThemeSelector />
       </Animated.View>
 
       {/* --- Add Business Modal --- */}

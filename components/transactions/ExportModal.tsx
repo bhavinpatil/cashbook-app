@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { COLORS } from '@/constants/theme';
-import { Transaction } from '../types';
-import { useExport } from '../hooks/useExport';
+import React, { useState } from 'react';
+import { ActivityIndicator, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Transaction } from '@/types/types';
+import { useExport } from '../../hooks/useExport';
 
 interface ExportModalProps {
     visible: boolean;

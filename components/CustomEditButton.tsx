@@ -1,7 +1,7 @@
 // components/CustomEditButton.tsx
 import React from 'react';
 import { Pressable, Text, StyleSheet, ViewStyle } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface CustomEditButtonProps {
   title?: string;

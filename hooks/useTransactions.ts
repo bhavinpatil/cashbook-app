@@ -1,8 +1,7 @@
 // app/transactions/hooks/useTransactions.ts
-import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Transaction } from '../types';
-
+import { useEffect, useState } from 'react';
+import { Transaction } from '@/types/types';
 export const useTransactions = (bookId: string) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);

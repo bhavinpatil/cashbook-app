@@ -3,8 +3,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import XLSX from 'xlsx';
-import { Transaction } from '../types';
-
+import { Transaction } from '@/types/types';
 export const useExport = () => {
 
     const formatDateTimeToIST = (dateStr: string) => {

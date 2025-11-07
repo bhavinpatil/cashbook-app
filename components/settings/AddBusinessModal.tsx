@@ -1,69 +1,45 @@
 import React from 'react';
 import { View, Text, TextInput, Modal, StyleSheet } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import CustomButton from '../../../components/CustomButton';
-import { useTheme } from '../../../contexts/ThemeContext';
-import { Business } from '../../types/types';
+import CustomButton from '@/components/CustomButton';
+import { useTheme } from '@/contexts/ThemeContext';
 
-interface AddBookModalProps {
+interface AddBusinessModalProps {
   visible: boolean;
   onClose: () => void;
-  onSave: (name: string, businessId: string) => void;
+  onSave: (name: string) => void;
   value: string;
   setValue: (text: string) => void;
-  selectedBusiness: string;
-  setSelectedBusiness: (id: string) => void;
-  businesses: Business[];
 }
 
-export default function AddBookModal({
+export default function AddBusinessModal({
   visible,
   onClose,
   onSave,
   value,
   setValue,
-  selectedBusiness,
-  setSelectedBusiness,
-  businesses,
-}: AddBookModalProps) {
+}: AddBusinessModalProps) {
   const { theme } = useTheme();
 
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.overlay}>
         <View style={[styles.card, { backgroundColor: theme.card }]}>
-          <Text style={[styles.title, { color: theme.textDark }]}>Add New Book</Text>
+          <Text style={[styles.title, { color: theme.textDark }]}>Add New Business</Text>
 
           <TextInput
             style={[
               styles.input,
               { borderColor: theme.border, color: theme.textDark, backgroundColor: theme.background },
             ]}
-            placeholder="Book Name"
+            placeholder="Business Name"
             placeholderTextColor={theme.textLight}
             value={value}
             onChangeText={setValue}
           />
 
-          <Text style={{ marginBottom: 6, color: theme.textLight }}>Select Business:</Text>
-          <Picker
-            selectedValue={selectedBusiness}
-            style={[styles.input, { backgroundColor: theme.background, color: theme.textDark }]}
-            onValueChange={setSelectedBusiness}
-          >
-            <Picker.Item label="Select Business" value="" />
-            {businesses.map((b) => (
-              <Picker.Item key={b.id} label={b.name} value={b.id} />
-            ))}
-          </Picker>
-
           <View style={styles.actions}>
             <CustomButton title="Cancel" type="secondary" onPress={onClose} style={{ flex: 1 }} />
-            <CustomButton
-              title="Save"
-              onPress={() => onSave(value, selectedBusiness)}
-              style={{ flex: 1 }}
-            />
+            <CustomButton title="Save" onPress={() => onSave(value)} style={{ flex: 1 }} />
           </View>
         </View>
       </View>

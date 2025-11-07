@@ -1,22 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import {
-    View,
-    Text,
-    Modal,
-    TextInput,
-    TouchableOpacity,
-    FlatList,
-    Image,
-    Alert,
-    ScrollView,
-    Platform,
-} from 'react-native';
+//
+
+import CustomButton from '@/components/CustomButton';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Transaction } from '../types';
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { randomUUID } from 'expo-crypto';
 import * as ImagePicker from 'expo-image-picker';
-import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
-import CustomButton from '@/components/CustomButton';
+import React, { useEffect, useState } from 'react';
+import {
+    Alert,
+    FlatList,
+    Image,
+    Modal,
+    Platform,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { Transaction } from '@/types/types';
 
 interface Props {
     visible: boolean;

@@ -1,9 +1,9 @@
 // app/transactions/components/TransactionList.tsx
-import React, { useMemo, useState } from 'react';
-import { FlatList, TouchableOpacity, Text, View, StyleSheet, TextInput } from 'react-native';
 import dayjs from 'dayjs';
-import { COLORS } from '../../../constants/theme';
-import { Transaction } from '../types';
+import React, { useMemo, useState } from 'react';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Transaction } from '@/types/types';
+import { COLORS } from '../../constants/theme';
 
 interface Props {
   transactions: Transaction[];

@@ -1,7 +1,7 @@
 // components/ScrollableScreenContainer.tsx
 import React from 'react';
 import { SafeAreaView, FlatList, StyleSheet, View } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface Props {
   children: React.ReactNode;

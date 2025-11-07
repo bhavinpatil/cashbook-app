@@ -1,7 +1,7 @@
 // contexts/ThemeContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { THEMES, ThemeType } from '../constants/theme';
+import { THEMES, ThemeType } from '@/constants/theme';
 
 interface ThemeContextProps {
   theme: ThemeType;

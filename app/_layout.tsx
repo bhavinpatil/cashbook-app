@@ -1,7 +1,7 @@
 import { ThemeProvider } from '../contexts/ThemeContext';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { View } from 'react-native';
 import 'react-native-reanimated';
 
@@ -29,13 +29,6 @@ function AppLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
         {/* Other stack screens show header normally */}
-        <Stack.Screen
-          name="businesses/[businessId]/books"
-          options={({ route }) => ({
-            title: (route.params as { businessName?: string })?.businessName || 'Books',
-          })}
-        />
-
         <Stack.Screen
           name="transactions/index"
           options={({ route }) => ({

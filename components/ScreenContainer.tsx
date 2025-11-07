@@ -1,7 +1,7 @@
 // components/ScreenContainer.tsx
 import React from 'react';
 import { SafeAreaView, View, StyleSheet } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface Props {
   children: React.ReactNode;

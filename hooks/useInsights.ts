@@ -1,8 +1,6 @@
 // app/transactions/hooks/useInsights.ts
 
-import { Transaction } from '../types';
-import { groupBy, sumBy } from 'lodash';
-
+import { Transaction } from '@/types/types';
 export const useInsights = (transactions: Transaction[]) => {
     // ---------- Pie Chart: Category-wise total debit ----------
     const getCategoryData = () => {

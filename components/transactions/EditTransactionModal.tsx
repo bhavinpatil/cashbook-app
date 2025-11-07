@@ -1,25 +1,25 @@
+// components/transactions/EditTransactionModal.tsx
+
+import CustomButton from '@/components/CustomButton';
+import { useTheme } from '@/contexts/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import dayjs from 'dayjs';
+import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
 import {
+    Alert,
+    Image,
     Modal,
-    View,
+    Platform,
+    ScrollView,
+    StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    ScrollView,
-    Image,
-    Alert,
-    StyleSheet,
-    Platform,
+    View,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { useTheme } from '@/contexts/ThemeContext';
-import CustomButton from '@/components/CustomButton';
-import { Transaction } from '../types';
-import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
-import dayjs from 'dayjs';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { Transaction } from '@/types/types';
 interface Props {
     visible: boolean;
     onClose: () => void;

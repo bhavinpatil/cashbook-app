@@ -1,7 +1,7 @@
 // components/ThemeSelector.tsx
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useTheme } from '../../../contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const THEME_OPTIONS = ['light', 'dark', 'blue', 'green'] as const;
 

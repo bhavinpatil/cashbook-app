@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import { View, Text, Alert, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import ScreenContainer from '../../components/ScreenContainer';
-import CustomButton from '../../components/CustomButton';
-import InputField from '../../components/InputField';
-import { COLORS, GLOBAL_STYLES } from '../../constants/theme';
+import ScreenContainer from '@/components/ScreenContainer';
+import CustomButton from '@/components/CustomButton';
+import InputField from '@/components/InputField';
+import { COLORS, GLOBAL_STYLES } from '@/constants/theme';
 
 export default function AddBusinessScreen() {
   const [businessName, setBusinessName] = useState('');
@@ -25,11 +25,6 @@ export default function AddBusinessScreen() {
       const newBusiness = { id: Date.now().toString(), name: businessName.trim() };
       const updatedList = [...businesses, newBusiness];
       await AsyncStorage.setItem('businesses', JSON.stringify(updatedList));
-
-      router.push({
-        pathname: '/businesses/[businessId]/books',
-        params: { businessId: newBusiness.id, businessName: newBusiness.name },
-      });
       
     } catch (error) {
       Alert.alert('Error', 'Failed to save the business.');
