@@ -1,15 +1,10 @@
-// app/insights/components/SpendsChart.tsx
-
 import React, { useMemo, useState, useEffect } from 'react';
 import {
     View,
     Text,
     TouchableOpacity,
     StyleSheet,
-    Modal,
-    TextInput,
     Dimensions,
-    ScrollView,
 } from 'react-native';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { useBudget } from '../hooks/useBudget';
@@ -48,31 +43,50 @@ export default function SpendsChart({
         await saveBudget(bookId, currentMonth, newBudget);
     };
 
-    // 🔢 Filter month transactions
+    // 🔢 Filter transactions for current and previous months
     const monthTx = useMemo(
         () => transactions.filter(tx => dayjs(tx.date).isSame(currentMonth, 'month')),
         [transactions, currentMonth]
     );
 
     const prevMonthTx = useMemo(
-        () => transactions.filter(tx => dayjs(tx.date).isSame(currentMonth.subtract(1, 'month'), 'month')),
+        () =>
+            transactions.filter(tx =>
+                dayjs(tx.date).isSame(currentMonth.subtract(1, 'month'), 'month')
+            ),
         [transactions, currentMonth]
     );
 
     const daysInMonth = currentMonth.daysInMonth();
-    const dailyDebit = Array(daysInMonth).fill(0);
+    const labels = Array.from({ length: daysInMonth }, (_, i) => String(i + 1));
 
+    // 🧮 Daily + Cumulative Debits (expenses)
+    const dailyDebit = Array(daysInMonth).fill(0);
     monthTx.forEach(tx => {
         const day = dayjs(tx.date).date() - 1;
         if (tx.type === 'debit') dailyDebit[day] += tx.amount;
     });
 
-    const spendsTotal = dailyDebit.reduce((a, b) => a + b, 0);
+    // Convert to cumulative
+    const cumulativeDebit = dailyDebit.reduce((acc, val, i) => {
+        if (i === 0) acc[i] = val;
+        else acc[i] = acc[i - 1] + val;
+        return acc;
+    }, [] as number[]);
+
+    // 📆 Limit chart to today's date
+    const today = dayjs();
+    const isCurrentMonth = today.isSame(currentMonth, 'month');
+    const daysToShow = isCurrentMonth ? today.date() : daysInMonth;
+    const visibleData = cumulativeDebit.slice(0, daysToShow);
+    const visibleLabels = labels.slice(0, daysToShow);
+
+    const spendsTotal = visibleData[visibleData.length - 1] || 0;
     const lastMonthSpends = prevMonthTx
         .filter(tx => tx.type === 'debit')
         .reduce((a, b) => a + b, 0);
 
-    // 📈 Monthly spends for last 6 months
+    // 📊 Monthly Spends (last 6 months)
     const monthlyLabels: string[] = [];
     const monthlySpends: number[] = [];
     for (let i = 5; i >= 0; i--) {
@@ -84,25 +98,14 @@ export default function SpendsChart({
         monthlySpends.push(total);
     }
 
+    // 💰 Format Y-axis
     const formatYAxis = (value: any) => {
         const num = Number(value);
-
-        // 🧩 Guard against undefined, NaN, null, or non-numeric strings
         if (isNaN(num) || num === undefined || num === null) return '0';
-
         if (num >= 100000) return `${(num / 100000).toFixed(1)}L`;
         if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
         return num.toFixed(0);
     };
-
-
-    // Generate one label per day, but only show 1st, mid, and last date in chart labels
-    const labels = Array.from({ length: daysInMonth }, (_, i) => String(i + 1));
-
-    // Keep chart neat — only render visible text on 1st, mid, and last day
-    const visibleLabelIndexes = [0, Math.floor(daysInMonth / 2), daysInMonth - 1];
-
-
 
     const chartConfig = {
         backgroundColor: '#ffffff',
@@ -112,15 +115,19 @@ export default function SpendsChart({
         color: (opacity = 1) => `rgba(30, 30, 30, ${opacity})`,
         labelColor: (opacity = 1) => `rgba(60, 60, 60, ${opacity})`,
         propsForBackgroundLines: { strokeDasharray: '4', strokeWidth: 0.5 },
+        fillShadowGradientFrom: '#e63946',
+        fillShadowGradientFromOpacity: 0.15,
+        fillShadowGradientTo: '#fbe9eb',
+        fillShadowGradientToOpacity: 0.05,
     };
 
     return (
         <>
-            {/* Top Summary */}
+            {/* Summary Section */}
             <View style={styles.comparisonContainer}>
                 <TouchableOpacity style={styles.comparisonBox} onPress={() => setShowBudgetModal(true)}>
                     <Text style={styles.smallText}>This month so far</Text>
-                    <Text style={[styles.valueText, { color: '#2a9d8f' }]}>
+                    <Text style={[styles.valueText, { color: '#e63946' }]}>
                         ₹{spendsTotal.toFixed(0)} / ₹{budget.toLocaleString()}
                     </Text>
                 </TouchableOpacity>
@@ -132,84 +139,99 @@ export default function SpendsChart({
                 </View>
             </View>
 
-            {/* Chart */}
+            {/* Chart Section */}
             <View style={styles.graphCard}>
                 <Text style={styles.sectionTitle}>
                     {isDaily ? 'Daily Spends Overview' : 'Monthly Spends Overview'}
                 </Text>
 
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    {isDaily ? (
-                        // 📈 Daily Line Chart
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                            <LineChart
-                                data={{
-                                    labels,
-                                    datasets: [
-                                        {
-                                            data: dailyDebit,
-                                            color: () => '#e63946',
-                                            strokeWidth: 2,
-                                            withDots: false,
-                                        },
-                                        {
-                                            data: Array(daysInMonth).fill(budget),
-                                            color: () => '#888',
-                                            strokeWidth: 1,
-                                            withDots: false,
-                                        },
-                                    ],
-                                    legend: ['Spends', 'Budget'],
-                                }}
-                                width={Math.max(screenWidth - 40, labels.length * 25)}
-                                height={260}
-                                yAxisLabel="₹"
-                                formatYLabel={(v) => formatYAxis(Number(v))}
-                                formatXLabel={(xValue) => {
-                                    const day = Number(xValue);
-                                    const visibleDays = [1, Math.ceil(daysInMonth / 2), daysInMonth];
-                                    return visibleDays.includes(day)
-                                        ? `${day} ${currentMonth.format('MMM')}`
-                                        : '';
-                                }}
-                                chartConfig={chartConfig}
-                                fromZero
-                                withOuterLines={false}
-                                withInnerLines
-                                withHorizontalLabels
-                                bezier
-                                segments={5}
-                                style={{ borderRadius: 12, marginLeft: -5 }}
-                            />
-                        </ScrollView>
-                    ) : (
-                        // 📊 Monthly Bar Chart
-                        <BarChart
+                {isDaily ? (
+                    <>
+                        {/* 📈 Daily Cumulative Spend Line */}
+                        <LineChart
                             data={{
-                                labels: monthlyLabels,
-                                datasets: [{ data: monthlySpends }],
+                                labels: visibleLabels,
+                                datasets: [
+                                    {
+                                        data: visibleData,
+                                        color: () => '#e63946',
+                                        strokeWidth: 2,
+                                    },
+                                    {
+                                        data: Array(visibleData.length).fill(budget),
+                                        color: () => '#888',
+                                        strokeWidth: 1,
+                                    },
+                                ],
                             }}
-                            width={screenWidth - 40}
+                            width={screenWidth - 60}
                             height={260}
                             yAxisLabel="₹"
-                            yAxisSuffix=''
-                            fromZero
-                            showValuesOnTopOfBars
-                            withInnerLines
-                            chartConfig={{
-                                ...chartConfig,
-                                barPercentage: 0.6,
-                                color: (opacity = 1) => `rgba(230, 57, 70, ${opacity})`,
-                                labelColor: (opacity = 1) => `rgba(60, 60, 60, ${opacity})`,
+                            formatYLabel={(v) => formatYAxis(Number(v))}
+                            formatXLabel={(xValue) => {
+                                const day = Number(xValue);
+                                const visibleDays = [1, Math.ceil(daysToShow / 2), daysToShow];
+                                return visibleDays.includes(day)
+                                    ? `${day} ${currentMonth.format('MMM')}`
+                                    : '';
                             }}
+                            chartConfig={chartConfig}
+                            fromZero
+                            withOuterLines={false}
+                            withInnerLines
+                            withHorizontalLabels
+                            bezier
+                            segments={5}
                             style={{ borderRadius: 12 }}
                         />
-                    )}
 
+                        {/* Marker for Today's Spend */}
+                        {isCurrentMonth && (
+                            <View
+                                style={{
+                                    position: 'absolute',
+                                    bottom: 72,
+                                    left: `${(daysToShow / daysInMonth) * 89}%`,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                }}
+                            >
+                                <View
+                                    style={{
+                                        width: 8,
+                                        height: 8,
+                                        borderRadius: 4,
+                                        backgroundColor: '#e63946',
+                                    }}
+                                />
+                            </View>
+                        )}
+                    </>
+                ) : (
+                    // 📊 Monthly Bar Chart (same height)
+                    <BarChart
+                        data={{
+                            labels: monthlyLabels,
+                            datasets: [{ data: monthlySpends }],
+                        }}
+                        width={screenWidth - 60}
+                        height={260}
+                        yAxisLabel="₹"
+                        yAxisSuffix=""
+                        fromZero
+                        showValuesOnTopOfBars
+                        withInnerLines
+                        chartConfig={{
+                            ...chartConfig,
+                            barPercentage: 0.6,
+                            color: (opacity = 1) => `rgba(230, 57, 70, ${opacity})`,
+                            labelColor: (opacity = 1) => `rgba(60, 60, 60, ${opacity})`,
+                        }}
+                        style={{ borderRadius: 12 }}
+                    />
+                )}
 
-                </ScrollView>
-
-                {/* Toggle */}
+                {/* Toggle Buttons */}
                 <View style={styles.toggleRow}>
                     <TouchableOpacity
                         onPress={() => setIsDaily(true)}
@@ -281,35 +303,4 @@ const styles = StyleSheet.create({
     },
     toggleText: { color: '#333', fontWeight: '600' },
     toggleTextActive: { color: '#fff', fontWeight: '600' },
-    modalBackdrop: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.4)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    modalCard: {
-        width: '80%',
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 20,
-        elevation: 4,
-    },
-    modalTitle: { fontSize: 18, fontWeight: '600', marginBottom: 12 },
-    input: {
-        borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 8,
-        padding: 10,
-        marginBottom: 20,
-    },
-    modalActions: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        gap: 10,
-    },
-    modalButton: {
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 6,
-    },
 });

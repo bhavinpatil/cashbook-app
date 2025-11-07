@@ -1,8 +1,8 @@
 // app/insights/components/IncomingChart.tsx
 
 import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, ScrollView } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { LineChart, BarChart } from 'react-native-chart-kit';
 import dayjs from 'dayjs';
 
 const screenWidth = Dimensions.get('window').width;
@@ -16,7 +16,7 @@ export default function IncomingChart({
 }) {
   const [isDaily, setIsDaily] = useState(true);
 
-  // 🔢 Filter transactions for current and previous months
+  // 🔢 Filter current and previous month transactions
   const monthTx = useMemo(
     () => transactions.filter(tx => dayjs(tx.date).isSame(currentMonth, 'month')),
     [transactions, currentMonth]
@@ -31,20 +31,36 @@ export default function IncomingChart({
   );
 
   const daysInMonth = currentMonth.daysInMonth();
+  const labels = Array.from({ length: daysInMonth }, (_, i) => String(i + 1));
 
-  // 🧮 Calculate daily credits
+  // 🧮 Daily + cumulative income
   const dailyCredit = Array(daysInMonth).fill(0);
   monthTx.forEach(tx => {
     const day = dayjs(tx.date).date() - 1;
     if (tx.type === 'credit') dailyCredit[day] += tx.amount;
   });
 
-  const incomeTotal = dailyCredit.reduce((a, b) => a + b, 0);
+  const cumulativeCredit = dailyCredit.reduce((acc, val, i) => {
+    if (i === 0) acc[i] = val;
+    else acc[i] = acc[i - 1] + val;
+    return acc;
+  }, [] as number[]);
+
+  // 📆 Handle current date visibility
+  const today = dayjs();
+  const isCurrentMonth = today.isSame(currentMonth, 'month');
+  const daysToShow = isCurrentMonth ? today.date() : daysInMonth;
+
+  // ✅ Show data only till today (no future plotting)
+  const visibleData = cumulativeCredit.slice(0, daysToShow);
+  const visibleLabels = labels.slice(0, daysToShow);
+
+  const incomeTotal = visibleData[visibleData.length - 1] || 0;
   const lastMonthIncome = prevMonthTx
     .filter(tx => tx.type === 'credit')
     .reduce((a, b) => a + b, 0);
 
-  // 📆 Prepare monthly income data (last 6 months)
+  // 📈 Monthly income for last 6 months
   const monthlyLabels: string[] = [];
   const monthlyIncome: number[] = [];
   for (let i = 5; i >= 0; i--) {
@@ -56,7 +72,6 @@ export default function IncomingChart({
     monthlyIncome.push(total);
   }
 
-  // 💰 Format Y-axis labels
   const formatYAxis = (value: any) => {
     const num = Number(value);
     if (isNaN(num) || num === undefined || num === null) return '0';
@@ -65,16 +80,6 @@ export default function IncomingChart({
     return num.toFixed(0);
   };
 
-  // 📊 X-axis labels
-  const getVisibleLabels = (days: number) => [
-    '1 ' + currentMonth.format('MMM'),
-    `${Math.ceil(days / 2)} ${currentMonth.format('MMM')}`,
-    `${days} ${currentMonth.format('MMM')}`,
-  ];
-
-  const labels = getVisibleLabels(daysInMonth);
-
-  // 🎨 Chart configuration
   const chartConfig = {
     backgroundColor: '#ffffff',
     backgroundGradientFrom: '#ffffff',
@@ -83,6 +88,10 @@ export default function IncomingChart({
     color: (opacity = 1) => `rgba(30, 30, 30, ${opacity})`,
     labelColor: (opacity = 1) => `rgba(60, 60, 60, ${opacity})`,
     propsForBackgroundLines: { strokeDasharray: '4', strokeWidth: 0.5 },
+    fillShadowGradientFrom: '#2a9d8f',
+    fillShadowGradientFromOpacity: 0.15,
+    fillShadowGradientTo: '#d9f3ec',
+    fillShadowGradientToOpacity: 0.05,
   };
 
   return (
@@ -109,34 +118,62 @@ export default function IncomingChart({
           {isDaily ? 'Daily Incoming Overview' : 'Monthly Incoming Overview'}
         </Text>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {isDaily ? (
+          // 📈 Cumulative Line Chart (only till today)
           <LineChart
             data={{
-              labels: isDaily ? labels : monthlyLabels,
+              labels: visibleLabels,
               datasets: [
                 {
-                  data: isDaily ? dailyCredit : monthlyIncome,
-                  color: () => '#2a9d8f', // Green tone for income
+                  data: visibleData,
+                  color: () => '#2a9d8f',
                   strokeWidth: 2,
-                  withDots: false,
                 },
               ],
-              legend: [isDaily ? 'Daily Income' : 'Monthly Income'],
             }}
-            width={Math.max(screenWidth - 40, labels.length * 25)}
+            width={screenWidth - 60}
             height={260}
             yAxisLabel="₹"
-            formatYLabel={v => formatYAxis(Number(v))}
+            formatYLabel={(v) => formatYAxis(Number(v))}
+            formatXLabel={(xValue) => {
+              const day = Number(xValue);
+              const visibleDays = [1, Math.ceil(daysToShow / 2), daysToShow];
+              return visibleDays.includes(day)
+                ? `${day} ${currentMonth.format('MMM')}`
+                : '';
+            }}
             chartConfig={chartConfig}
             fromZero
             withOuterLines={false}
-            withInnerLines={true}
-            withHorizontalLabels={true}
+            withInnerLines
+            withHorizontalLabels
             bezier
             segments={5}
-            style={{ borderRadius: 12, marginLeft: -5 }}
+            style={{ borderRadius: 12 }}
           />
-        </ScrollView>
+        ) : (
+          // 📊 Monthly Bar Chart
+          <BarChart
+            data={{
+              labels: monthlyLabels,
+              datasets: [{ data: monthlyIncome }],
+            }}
+            width={screenWidth - 60}
+            height={260}
+            yAxisLabel="₹"
+            yAxisSuffix=""
+            fromZero
+            showValuesOnTopOfBars
+            withInnerLines
+            chartConfig={{
+              ...chartConfig,
+              barPercentage: 0.6,
+              color: (opacity = 1) => `rgba(42, 157, 143, ${opacity})`,
+              labelColor: (opacity = 1) => `rgba(60, 60, 60, ${opacity})`,
+            }}
+            style={{ borderRadius: 12 }}
+          />
+        )}
 
         {/* Toggle Buttons */}
         <View style={styles.toggleRow}>
