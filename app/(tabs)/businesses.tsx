@@ -1,20 +1,11 @@
 // app/(tabs)/businesses.tsx
-import React, { useEffect, useState, useCallback } from 'react';
-import {
-  Text,
-  Button,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+
+import React, { useCallback, useState } from 'react';
+import { Text, FlatList, TouchableOpacity, StyleSheet, View, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Link, useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native'; // ✅ added
+import { useFocusEffect } from '@react-navigation/native';
 import ScreenContainer from '../../components/ScreenContainer';
-import { GLOBAL_STYLES, COLORS } from '../../constants/theme';
-import CustomButton from '@/components/CustomButton';
-import EditNameModal from '../../components/EditNameModal';
-import { Alert, View } from 'react-native';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface Business {
   id: string;
@@ -23,144 +14,94 @@ interface Business {
 
 export default function BusinessesScreen() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [editVisible, setEditVisible] = useState(false);
-  const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
+  const { theme } = useTheme();
 
-  const router = useRouter();
-
-  // Load businesses from local storage
   const loadBusinesses = async () => {
     try {
       const data = await AsyncStorage.getItem('businesses');
-      if (data) setBusinesses(JSON.parse(data));
-      else setBusinesses([]);
+      setBusinesses(data ? JSON.parse(data) : []);
     } catch (error) {
       console.error('Failed to load businesses:', error);
+      setBusinesses([]);
     }
   };
 
-  // ✅ useFocusEffect ensures data reload on tab focus
-  useFocusEffect(
-    useCallback(() => {
-      loadBusinesses();
-    }, [])
-  );
+  useFocusEffect(useCallback(() => { loadBusinesses(); }, []));
 
-  const deleteBusiness = async (id: string) => {
-    Alert.alert('Confirm Delete', 'Delete this business and all its books?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          const businessesData = await AsyncStorage.getItem('businesses');
-          const booksData = await AsyncStorage.getItem('books');
-          const businesses = businessesData ? JSON.parse(businessesData) : [];
-          const books = booksData ? JSON.parse(booksData) : [];
+  const renderItem = ({ item, index }: { item: Business; index: number }) => {
+    const scale = new Animated.Value(0.9);
+    const opacity = new Animated.Value(0);
 
-          const updatedBusinesses = businesses.filter((b: Business) => b.id !== id);
-          const updatedBooks = books.filter((b: any) => b.businessId !== id);
+    Animated.timing(scale, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+    Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true }).start();
 
-          await AsyncStorage.setItem('businesses', JSON.stringify(updatedBusinesses));
-          await AsyncStorage.setItem('books', JSON.stringify(updatedBooks));
-          loadBusinesses();
-        },
-      },
-    ]);
-  };
-
-  const handleEditSave = async (newName: string) => {
-    if (!selectedBusiness || !newName) return;
-    const updated = businesses.map((b) =>
-      b.id === selectedBusiness.id ? { ...b, name: newName } : b
+    return (
+      <Animated.View style={{ transform: [{ scale }], opacity }}>
+        <TouchableOpacity
+          style={[
+            styles.item,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.border,
+              shadowColor: theme.name === 'dark' ? '#000' : theme.primary,
+            },
+          ]}
+          activeOpacity={0.85}
+        >
+          <Text style={[styles.itemTitle, { color: theme.textDark }]}>{item.name}</Text>
+        </TouchableOpacity>
+      </Animated.View>
     );
-    await AsyncStorage.setItem('businesses', JSON.stringify(updated));
-    setBusinesses(updated);
   };
-
-  const renderItem = ({ item }: { item: Business }) => (
-    <View style={styles.item}>
-      <TouchableOpacity
-        style={{ flex: 1 }}
-        onPress={() => router.push(`/businesses/${item.id}/books`)}
-      >
-        <Text style={styles.itemText}>{item.name}</Text>
-      </TouchableOpacity>
-
-      <View style={styles.actionsContainer}>
-        <TouchableOpacity onPress={() => { setSelectedBusiness(item); setEditVisible(true); }}>
-          <Text style={styles.actionText}>Edit</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => deleteBusiness(item.id)}>
-          <Text style={[styles.actionText, { color: COLORS.danger }]}>Delete</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
 
   return (
     <ScreenContainer>
-      <Text style={GLOBAL_STYLES.title}>Businesses</Text>
-      <Text style={GLOBAL_STYLES.subtitle}>
-        Select a business or add a new one
-      </Text>
+      <Text style={[styles.title, { color: theme.textDark }]}>Your Businesses</Text>
 
       <FlatList
         data={businesses}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ gap: 10, marginBottom: 20 }}
-      />
-
-      <CustomButton title="＋ Add New Business" onPress={() => router.push("/businesses/add-business")} />
-
-      <EditNameModal
-        visible={editVisible}
-        initialValue={selectedBusiness?.name || ''}
-        title="Edit Business Name"
-        onSave={handleEditSave}
-        onClose={() => setEditVisible(false)}
+        contentContainerStyle={{ gap: 12, paddingBottom: 80 }}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            {/* Temporary fallback until Lottie file is added */}
+            <Text style={{ fontSize: 50, color: theme.textLight }}>📚</Text>
+            <Text style={[styles.emptyText, { color: theme.textLight }]}>
+              No books yet. Add a new one from Settings.
+            </Text>
+          </View>
+        }
       />
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
   item: {
-    backgroundColor: '#fff',
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    padding: 18,
+    borderRadius: 14,
+    borderWidth: 1,
+    elevation: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
   },
-
-  itemText: {
-    fontSize: 16,
+  itemTitle: {
+    fontSize: 18,
     fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,            // space between title and buttons
   },
-
-  actionsContainer: {
-    flexDirection: 'row',       // places Edit & Delete side by side
-    justifyContent: 'flex-start',
+  emptyContainer: {
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 50,
   },
-
-  actionText: {
-    color: COLORS.primary,
-    fontWeight: '600',
-    fontSize: 15,
-    marginRight: 12,            // space between Edit & Delete
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-    textAlign: 'center',
+  emptyText: {
+    fontSize: 14,
+    marginTop: 8,
   },
 });

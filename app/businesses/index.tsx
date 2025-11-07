@@ -26,12 +26,17 @@ export default function AddBusinessScreen() {
       const updatedList = [...businesses, newBusiness];
       await AsyncStorage.setItem('businesses', JSON.stringify(updatedList));
 
-      router.push(`/businesses/${newBusiness.id}/books`);
+      router.push({
+        pathname: '/businesses/[businessId]/books',
+        params: { businessId: newBusiness.id, businessName: newBusiness.name },
+      });
+      
     } catch (error) {
       Alert.alert('Error', 'Failed to save the business.');
       console.error(error);
     }
   };
+
 
   return (
     <ScreenContainer>

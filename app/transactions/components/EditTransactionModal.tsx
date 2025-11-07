@@ -1,4 +1,3 @@
-// app/transactions/components/EditTransactionModal.tsx
 import React, { useEffect, useState } from 'react';
 import {
     Modal,
@@ -10,12 +9,16 @@ import {
     Image,
     Alert,
     StyleSheet,
+    Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { COLORS } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import CustomButton from '@/components/CustomButton';
 import { Transaction } from '../types';
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import dayjs from 'dayjs';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Props {
     visible: boolean;
@@ -30,26 +33,49 @@ export default function EditTransactionModal({
     onClose,
     transaction,
     onUpdate,
-    categories,
+    categories: initialCategories,
 }: Props) {
-    const [amount, setAmount] = useState(String(transaction.amount));
-    const [description, setDescription] = useState(transaction.description || '');
-    const [category, setCategory] = useState(transaction.category || '');
-    const [images, setImages] = useState<string[]>(transaction.images || []);
-    const [date, setDate] = useState(new Date(transaction.date));
-    const [showDatePicker, setShowDatePicker] = useState(false);
-    const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const { theme } = useTheme();
 
+    const [amount, setAmount] = useState('');
+    const [description, setDescription] = useState('');
+    const [category, setCategory] = useState('');
+    const [images, setImages] = useState<string[]>([]);
+    const [date, setDate] = useState(new Date());
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [categories, setCategories] = useState<string[]>(initialCategories || []);
+    const [addCatVisible, setAddCatVisible] = useState(false);
+    const [newCategoryText, setNewCategoryText] = useState('');
+
+    /** 🧠 Load initial transaction data & categories whenever modal opens */
     useEffect(() => {
-        if (transaction) {
+        if (visible && transaction) {
             setAmount(String(transaction.amount));
             setDescription(transaction.description || '');
             setCategory(transaction.category || '');
             setImages(transaction.images || []);
             setDate(new Date(transaction.date));
+            loadCategories();
         }
-    }, [transaction]);
+    }, [visible, transaction]);
 
+    const loadCategories = async () => {
+        try {
+            const stored = await AsyncStorage.getItem('categories');
+            setCategories(stored ? JSON.parse(stored) : initialCategories || []);
+        } catch (e) {
+            console.error('Failed to load categories:', e);
+        }
+    };
+
+    const saveCategories = async (updated: string[]) => {
+        try {
+            await AsyncStorage.setItem('categories', JSON.stringify(updated));
+            setCategories(updated);
+        } catch (e) {
+            console.error('Failed to save categories:', e);
+        }
+    };
 
     const handlePickImage = async () => {
         if (images.length >= 4) {
@@ -74,6 +100,7 @@ export default function EditTransactionModal({
             Alert.alert('Invalid Amount', 'Please enter a valid amount.');
             return;
         }
+
         const updatedTx: Transaction = {
             ...transaction,
             amount: Number(amount),
@@ -82,234 +109,341 @@ export default function EditTransactionModal({
             images,
             date: date.toISOString(),
         };
+
         onUpdate(updatedTx);
+    };
+
+    const handleAddCategory = async () => {
+        const trimmed = newCategoryText.trim();
+        if (!trimmed) {
+            Alert.alert('Enter category name');
+            return;
+        }
+        if (categories.includes(trimmed)) {
+            Alert.alert('Duplicate category', 'This category already exists.');
+            return;
+        }
+        const updated = [...categories, trimmed];
+        await saveCategories(updated);
+        setNewCategoryText('');
+        setCategory(trimmed);
+        setAddCatVisible(false);
+    };
+
+    const handleDeleteCategory = async (cat: string) => {
+        Alert.alert('Remove Category', `Delete "${cat}" from list?`, [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Delete',
+                style: 'destructive',
+                onPress: async () => {
+                    const updated = categories.filter((c) => c !== cat);
+                    await saveCategories(updated);
+                    if (category === cat) setCategory('');
+                },
+            },
+        ]);
+    };
+
+    const openDateTimePicker = () => {
+        if (Platform.OS === 'android') {
+            DateTimePickerAndroid.open({
+                value: date,
+                mode: 'date',
+                is24Hour: false,
+                onChange: (_: any, selectedDate?: Date) => {
+                    if (selectedDate) {
+                        DateTimePickerAndroid.open({
+                            value: selectedDate,
+                            mode: 'time',
+                            is24Hour: false,
+                            onChange: (_: any, selectedTime?: Date) => {
+                                if (selectedTime) {
+                                    const finalDate = new Date(
+                                        selectedDate.getFullYear(),
+                                        selectedDate.getMonth(),
+                                        selectedDate.getDate(),
+                                        selectedTime.getHours(),
+                                        selectedTime.getMinutes()
+                                    );
+                                    setDate(finalDate);
+                                }
+                            },
+                        });
+                    }
+                },
+            });
+        } else {
+            setShowDatePicker(true);
+        }
     };
 
     return (
         <Modal visible={visible} animationType="slide" transparent>
-            <View
-                style={{
-                    flex: 1,
-                    backgroundColor: 'rgba(0,0,0,0.5)',
-                    justifyContent: 'center',
-                    padding: 16,
-                }}
-            >
+            <View style={styles.overlay}>
                 <View
-                    style={{
-                        backgroundColor: COLORS.card,
-                        borderRadius: 10,
-                        padding: 16,
-                        maxHeight: '90%',
-                    }}
+                    style={[
+                        styles.container,
+                        { backgroundColor: theme.card, borderColor: theme.border },
+                    ]}
                 >
                     <ScrollView showsVerticalScrollIndicator={false}>
-                        <Text
-                            style={{
-                                fontSize: 18,
-                                fontWeight: 'bold',
-                                textAlign: 'center',
-                                marginBottom: 10,
-                                color: COLORS.textDark,
-                            }}
-                        >
+                        <Text style={[styles.title, { color: theme.textDark }]}>
                             Edit Transaction
                         </Text>
 
                         {/* Amount */}
-                        <Text style={{ color: COLORS.textLight }}>Amount</Text>
-                        <TextInput
-                            style={{
-                                borderWidth: 1,
-                                borderColor: COLORS.border,
-                                borderRadius: 8,
-                                padding: 8,
-                                marginBottom: 10,
-                                color: COLORS.textDark,
-                            }}
-                            keyboardType="numeric"
+                        <Label text="Amount" theme={theme} />
+                        <Input
                             value={amount}
                             onChangeText={setAmount}
+                            keyboardType="numeric"
+                            placeholder="Enter amount"
+                            theme={theme}
                         />
 
                         {/* Description */}
-                        <Text style={{ color: COLORS.textLight }}>Description</Text>
-                        <TextInput
-                            style={{
-                                borderWidth: 1,
-                                borderColor: COLORS.border,
-                                borderRadius: 8,
-                                padding: 8,
-                                marginBottom: 10,
-                                color: COLORS.textDark,
-                            }}
-                            placeholder="Description"
+                        <Label text="Description" theme={theme} />
+                        <Input
                             value={description}
                             onChangeText={setDescription}
+                            placeholder="Description (optional)"
+                            multiline
+                            theme={theme}
                         />
 
                         {/* Category */}
-                        <Text style={{ color: COLORS.textLight }}>Category</Text>
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            style={{ flexDirection: 'row', marginBottom: 10 }}
-                        >
+                        <Label text="Category" theme={theme} />
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                             {categories.map((c) => (
-                                <TouchableOpacity
-                                    key={c}
-                                    onPress={() => setCategory(c)}
-                                    style={{
-                                        backgroundColor:
-                                            category === c ? COLORS.primary : COLORS.border,
-                                        paddingVertical: 6,
-                                        paddingHorizontal: 12,
-                                        borderRadius: 16,
-                                        marginRight: 8,
-                                    }}
-                                >
-                                    <Text
+                                <View key={c} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 6 }}>
+                                    <TouchableOpacity
+                                        onPress={() => setCategory(c)}
                                         style={{
-                                            color: category === c ? 'white' : COLORS.textDark,
-                                            fontSize: 14,
+                                            backgroundColor: category === c ? theme.primary : theme.border,
+                                            paddingVertical: 6,
+                                            paddingHorizontal: 12,
+                                            borderRadius: 16,
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
                                         }}
                                     >
-                                        {c}
-                                    </Text>
-                                </TouchableOpacity>
+                                        <Text
+                                            style={{
+                                                color: category === c ? '#fff' : theme.textDark,
+                                                marginRight: 6,
+                                            }}
+                                        >
+                                            {c}
+                                        </Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => handleDeleteCategory(c)}>
+                                        <Text style={{ color: theme.danger, fontWeight: 'bold' }}>×</Text>
+                                    </TouchableOpacity>
+                                </View>
                             ))}
                             <TouchableOpacity
-                                onPress={() => {
-                                    const newCat = prompt('Enter new category:');
-                                    if (newCat) setCategory(newCat);
-                                }}
+                                onPress={() => setAddCatVisible(true)}
                                 style={{
-                                    backgroundColor: COLORS.border,
+                                    backgroundColor: theme.border,
                                     paddingVertical: 6,
                                     paddingHorizontal: 12,
                                     borderRadius: 16,
+                                    justifyContent: 'center',
                                 }}
                             >
-                                <Text style={{ color: COLORS.textDark }}>＋ Add</Text>
+                                <Text style={{ color: theme.textDark }}>＋ Add</Text>
                             </TouchableOpacity>
                         </ScrollView>
 
-                        {/* Date */}
-                        <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-                            <Text style={{ color: COLORS.textLight, marginBottom: 5 }}>
-                                Date: {date.toDateString()}
+                        {/* Date & Time */}
+                        <Label text="Date & Time" theme={theme} />
+                        <TouchableOpacity
+                            onPress={openDateTimePicker}
+                            style={[styles.dateButton, { borderColor: theme.border }]}
+                        >
+                            <Text style={{ color: theme.textLight }}>
+                                {dayjs(date).format('DD MMM YYYY, hh:mm A')}
                             </Text>
                         </TouchableOpacity>
-                        {showDatePicker && (
-                            <DateTimePicker
-                                value={date}
-                                mode="date"
-                                display="default"
-                                onChange={(e, selectedDate) => {
-                                    setShowDatePicker(false);
-                                    if (selectedDate) setDate(selectedDate);
-                                }}
-                            />
-                        )}
 
                         {/* Images */}
-                        <Text style={{ color: COLORS.textLight, marginTop: 10 }}>Images</Text>
+                        <Label text="Images (max 4)" theme={theme} />
                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                             {images.map((uri, idx) => (
                                 <View key={idx} style={{ position: 'relative', marginRight: 8 }}>
-                                    <TouchableOpacity onPress={() => setPreviewImage(uri)}>
-                                        <Image
-                                            source={{ uri }}
-                                            style={{
-                                                width: 80,
-                                                height: 80,
-                                                borderRadius: 8,
-                                                marginTop: 5,
-                                            }}
-                                        />
-                                    </TouchableOpacity>
+                                    <Image
+                                        source={{ uri }}
+                                        style={{
+                                            width: 80,
+                                            height: 80,
+                                            borderRadius: 8,
+                                            borderWidth: 1,
+                                            borderColor: theme.border,
+                                        }}
+                                    />
                                     <TouchableOpacity
                                         onPress={() => handleRemoveImage(uri)}
-                                        style={{
-                                            position: 'absolute',
-                                            top: 0,
-                                            right: 0,
-                                            backgroundColor: 'rgba(0,0,0,0.5)',
-                                            borderRadius: 10,
-                                            padding: 2,
-                                        }}
+                                        style={styles.removeImg}
                                     >
-                                        <Text style={{ color: 'white', fontSize: 12 }}>✕</Text>
+                                        <Text style={{ color: '#fff', fontSize: 12 }}>×</Text>
                                     </TouchableOpacity>
                                 </View>
                             ))}
                             {images.length < 4 && (
                                 <TouchableOpacity
                                     onPress={handlePickImage}
-                                    style={{
-                                        width: 80,
-                                        height: 80,
-                                        borderWidth: 1,
-                                        borderColor: COLORS.border,
-                                        borderRadius: 8,
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        marginTop: 5,
-                                    }}
+                                    style={[
+                                        styles.addImg,
+                                        { borderColor: theme.border, backgroundColor: theme.border },
+                                    ]}
                                 >
-                                    <Text style={{ fontSize: 28, color: COLORS.textLight }}>＋</Text>
+                                    <Text style={{ fontSize: 26, color: theme.textLight }}>＋</Text>
                                 </TouchableOpacity>
                             )}
                         </ScrollView>
 
-                        <CustomButton title="💾 Save Changes" onPress={handleSave} style={{ marginTop: 20 }} />
-                        <TouchableOpacity
-                            onPress={onClose}
-                            style={{ marginTop: 10, alignItems: 'center' }}
-                        >
-                            <Text style={{ color: COLORS.danger, margin: 20, fontWeight: "bold" }} >Cancel</Text>
-                        </TouchableOpacity>
+                        {/* Buttons */}
+                        <View style={{ flexDirection: 'row', gap: 10, marginTop: 20 }}>
+                            <CustomButton
+                                title="Cancel"
+                                onPress={onClose}
+                                style={{
+                                    flex: 1,
+                                    backgroundColor: theme.card,
+                                    borderWidth: 1,
+                                    borderColor: theme.border,
+                                }}
+                                textColor={theme.textDark}
+                            />
+                            <CustomButton
+                                title="💾 Save"
+                                onPress={handleSave}
+                                style={{ flex: 1, backgroundColor: theme.primary }}
+                            />
+                        </View>
                     </ScrollView>
                 </View>
             </View>
-            <Modal
-                visible={!!previewImage}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setPreviewImage(null)}
-            >
-                <View style={styles.previewContainer}>
-                    <TouchableOpacity
-                        style={styles.previewBackdrop}
-                        onPress={() => setPreviewImage(null)}
-                    />
-                    {previewImage && (
-                        <Image
-                            source={{ uri: previewImage }}
-                            style={styles.previewImage}
-                            resizeMode="contain"
+
+            {/* Add Category Modal */}
+            <Modal visible={addCatVisible} transparent animationType="slide">
+                <View style={styles.overlay}>
+                    <View
+                        style={[
+                            styles.addCatModal,
+                            { backgroundColor: theme.card, borderColor: theme.border },
+                        ]}
+                    >
+                        <Text style={[styles.subTitle, { color: theme.textDark }]}>
+                            Add New Category
+                        </Text>
+                        <TextInput
+                            placeholder="Category name"
+                            placeholderTextColor={theme.textLight}
+                            value={newCategoryText}
+                            onChangeText={setNewCategoryText}
+                            style={[
+                                styles.catInput,
+                                { borderColor: theme.border, color: theme.textDark },
+                            ]}
                         />
-                    )}
+                        <View style={{ flexDirection: 'row', gap: 10 }}>
+                            <CustomButton
+                                title="Cancel"
+                                onPress={() => setAddCatVisible(false)}
+                                type="secondary"
+                                style={{ flex: 1 }}
+                            />
+                            <CustomButton
+                                title="Add"
+                                onPress={handleAddCategory}
+                                style={{ flex: 1, backgroundColor: theme.primary }}
+                            />
+                        </View>
+                    </View>
                 </View>
             </Modal>
-
         </Modal>
     );
 }
 
+/* ----- Small subcomponents ----- */
+const Label = ({ text, theme }: any) => (
+    <Text style={{ color: theme.textLight, marginTop: 8, marginBottom: 4, fontWeight: '500' }}>
+        {text}
+    </Text>
+);
+
+const Input = ({ value, onChangeText, placeholder, multiline, keyboardType, theme }: any) => (
+    <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={theme.textLight}
+        keyboardType={keyboardType}
+        multiline={multiline}
+        style={{
+            borderWidth: 1,
+            borderColor: theme.border,
+            borderRadius: 10,
+            padding: 10,
+            color: theme.textDark,
+            height: multiline ? 80 : undefined,
+            marginBottom: 10,
+            textAlignVertical: multiline ? 'top' : 'center',
+        }}
+    />
+);
+
 const styles = StyleSheet.create({
-    previewContainer: {
+    overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.95)',
+        backgroundColor: 'rgba(0,0,0,0.45)',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    previewBackdrop: {
-        ...StyleSheet.absoluteFillObject,
+    container: {
+        width: '92%',
+        borderRadius: 14,
+        padding: 16,
+        borderWidth: 1,
+        maxHeight: '90%',
     },
-    previewImage: {
+    title: { fontSize: 20, fontWeight: '700', textAlign: 'center', marginBottom: 10 },
+    subTitle: { fontSize: 16, fontWeight: '700', marginBottom: 10 },
+    addCatModal: {
         width: '90%',
-        height: '80%',
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 1,
+    },
+    catInput: {
+        borderWidth: 1,
         borderRadius: 10,
+        padding: 10,
+        marginBottom: 12,
+    },
+    dateButton: {
+        borderWidth: 1,
+        borderRadius: 10,
+        padding: 12,
+        marginBottom: 10,
+    },
+    removeImg: {
+        position: 'absolute',
+        top: -6,
+        right: -6,
+        backgroundColor: '#ef4444',
+        borderRadius: 10,
+        paddingHorizontal: 4,
+    },
+    addImg: {
+        width: 80,
+        height: 80,
+        borderWidth: 1,
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });

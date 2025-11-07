@@ -1,49 +1,87 @@
 // app/transactions/components/TransactionSummary.tsx
+
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { COLORS } from '../../../constants/theme';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useTheme } from '../../../contexts/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 
 interface Props {
   totalCredit: number;
   totalDebit: number;
   balance: number;
+  onViewInsights: () => void;
 }
 
-export default function TransactionSummary({ totalCredit, totalDebit, balance }: Props) {
+export default function TransactionSummary({
+  totalCredit,
+  totalDebit,
+  balance,
+  onViewInsights,
+}: Props) {
+  const { theme } = useTheme();
+
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: theme.card, borderColor: theme.border },
+      ]}
+    >
+      {/* Credit / Debit Section */}
       <View style={styles.row}>
         <View>
-          <Text style={styles.label}>Total Credit</Text>
-          <Text style={[styles.value, { color: COLORS.success }]}>₹{totalCredit.toFixed(2)}</Text>
+          <Text style={[styles.label, { color: theme.textLight }]}>Total Credit</Text>
+          <Text style={[styles.value, { color: theme.success }]}>
+            ₹{totalCredit.toFixed(2)}
+          </Text>
         </View>
         <View>
-          <Text style={styles.label}>Total Debit</Text>
-          <Text style={[styles.value, { color: COLORS.danger }]}>₹{totalDebit.toFixed(2)}</Text>
+          <Text style={[styles.label, { color: theme.textLight }]}>Total Debit</Text>
+          <Text style={[styles.value, { color: theme.danger }]}>
+            ₹{totalDebit.toFixed(2)}
+          </Text>
         </View>
       </View>
 
+      {/* Balance Section */}
       <View style={styles.balanceCard}>
-        <Text style={styles.label}>Balance</Text>
+        <Text style={[styles.label, { color: theme.textLight }]}>Balance</Text>
         <Text
           style={[
             styles.value,
-            { color: balance >= 0 ? COLORS.success : COLORS.danger, fontSize: 22 },
+            {
+              color: balance >= 0 ? theme.success : theme.danger,
+              fontSize: 22,
+            },
           ]}
         >
           ₹{balance.toFixed(2)}
         </Text>
       </View>
+
+      {/* View Insights Button */}
+      <TouchableOpacity
+        onPress={onViewInsights}
+        activeOpacity={0.85}
+        style={[
+          styles.insightButton,
+          { backgroundColor: theme.primary, shadowColor: theme.primary },
+        ]}
+      >
+        <Ionicons name="bar-chart-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
+        <Text style={styles.insightText}>View Insights</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.card,
+    borderRadius: 14,
+    borderWidth: 1,
     padding: 16,
-    borderRadius: 12,
     marginBottom: 16,
+    elevation: 2,
   },
   row: {
     flexDirection: 'row',
@@ -51,7 +89,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: COLORS.textSecondary,
   },
   value: {
     fontSize: 18,
@@ -60,5 +97,22 @@ const styles = StyleSheet.create({
   balanceCard: {
     marginTop: 16,
     alignItems: 'center',
+  },
+  insightButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    paddingVertical: 12,
+    borderRadius: 30,
+    elevation: 3,
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  insightText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 15,
   },
 });
