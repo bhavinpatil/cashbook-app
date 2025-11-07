@@ -1,14 +1,12 @@
-// components/CustomButton.tsx
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
-import { COLORS } from '../constants/theme';
+import { Pressable, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface CustomButtonProps {
   title: string;
   onPress: () => void;
-  type?: 'primary' | 'secondary' | 'outline';
-  style?: ViewStyle;
+  type?: 'primary' | 'secondary' | 'outline' | 'danger' | 'small';
+  style?: ViewStyle | ViewStyle[];
   disabled?: boolean;
   loading?: boolean;
 }
@@ -21,54 +19,71 @@ export default function CustomButton({
   disabled = false,
   loading = false,
 }: CustomButtonProps) {
-  const { theme } = useTheme() || {};
-  const activeTheme = theme || COLORS;
+  const { theme } = useTheme();
 
-  const getButtonStyle = () => {
-    switch (type) {
-      case 'outline':
-        return [styles.button, { borderColor: activeTheme.primary, borderWidth: 1 }];
-      case 'secondary':
-        return [styles.button, { backgroundColor: activeTheme.card }];
-      default:
-        return [styles.button, { backgroundColor: activeTheme.primary }];
-    }
-  };
+  const backgroundColor =
+    type === 'primary'
+      ? theme.primary
+      : type === 'danger'
+      ? theme.danger
+      : type === 'secondary'
+      ? theme.card
+      : 'transparent';
+
+  const borderColor =
+    type === 'outline' ? theme.primary : 'transparent';
 
   const textColor =
-    type === 'outline'
-      ? activeTheme.primary
-      : type === 'secondary'
-      ? activeTheme.textDark
-      : 'white';
+    type === 'primary' || type === 'danger'
+      ? 'white'
+      : theme.textDark;
 
   return (
-    <TouchableOpacity
-      style={[...getButtonStyle(), style, disabled && { opacity: 0.6 }]}
+    <Pressable
       onPress={onPress}
       disabled={disabled || loading}
-      activeOpacity={0.8}
+      style={({ pressed }) => [
+        styles.button,
+        type === 'small' && styles.smallButton,
+        { backgroundColor, borderColor },
+        pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
+        style,
+      ]}
     >
       {loading ? (
         <ActivityIndicator color={textColor} />
       ) : (
-        <Text style={[styles.text, { color: textColor }]}>{title}</Text>
+        <Text
+          style={[
+            styles.text,
+            type === 'small' && { fontSize: 14 },
+            { color: textColor },
+          ]}
+        >
+          {title}
+        </Text>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 3,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  smallButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
   },
   text: {
     fontSize: 16,

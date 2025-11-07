@@ -1,24 +1,14 @@
 // app/(tabs)/books.tsx
+
+
 import React, { useState, useCallback } from 'react';
-import {
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  View,
-  TextInput,
-  Button,
-  Alert,
-  Modal,
-} from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import { Text, FlatList, TouchableOpacity, StyleSheet, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import ScreenContainer from '../../components/ScreenContainer';
-import { GLOBAL_STYLES, COLORS } from '../../constants/theme';
-import { randomUUID } from 'expo-crypto';
-import CustomButton from '@/components/CustomButton';
+import { GLOBAL_STYLES } from '../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface Book {
   id: string;
@@ -33,13 +23,10 @@ interface Business {
 
 export default function BooksScreen() {
   const router = useRouter();
-  const [books, setBooks] = useState<(Book & { businessName: string })[]>([]);
-  const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [bookName, setBookName] = useState('');
-  const [selectedBusinessId, setSelectedBusinessId] = useState('');
+  const { theme } = useTheme();
 
-  // Load all books with their business names
+  const [books, setBooks] = useState<(Book & { businessName: string })[]>([]);
+
   const loadBooks = async () => {
     try {
       const booksData = await AsyncStorage.getItem('books');
@@ -47,8 +34,6 @@ export default function BooksScreen() {
 
       const allBooks: Book[] = booksData ? JSON.parse(booksData) : [];
       const allBusinesses: Business[] = businessesData ? JSON.parse(businessesData) : [];
-
-      setBusinesses(allBusinesses);
 
       const combined = allBooks.map((book) => {
         const business = allBusinesses.find((b) => b.id === book.businessId);
@@ -70,178 +55,75 @@ export default function BooksScreen() {
     }, [])
   );
 
-  const handleAddBook = async () => {
-    if (!bookName.trim()) {
-      Alert.alert('Error', 'Please enter a valid book name.');
-      return;
-    }
-    if (!selectedBusinessId) {
-      Alert.alert('Error', 'Please select a business.');
-      return;
-    }
-
-    try {
-      const id = randomUUID();
-      const newBook = { id, name: bookName, businessId: selectedBusinessId };
-
-      const data = await AsyncStorage.getItem('books');
-      const books = data ? JSON.parse(data) : [];
-      books.push(newBook);
-
-      await AsyncStorage.setItem('books', JSON.stringify(books));
-      setBookName('');
-      setSelectedBusinessId('');
-      setIsModalVisible(false);
-      loadBooks();
-    } catch (error) {
-      console.error('Error saving book:', error);
-    }
-  };
-
-  // Each Book Card
   const renderItem = ({ item }: { item: Book & { businessName: string } }) => (
-    <View style={styles.item}>
-      <Text style={styles.bookName}>{item.name}</Text>
-      <Text style={styles.businessName}>🏢 {item.businessName}</Text>
-
-      <View style={styles.actionsContainer}>
-        {/* View Transactions Button */}
-        <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: COLORS.primary }]}
-          onPress={() =>
-            router.push({
-              pathname: '/transactions',
-              params: { bookId: item.id, bookName: item.name },
-            })
-          }
-        >
-          <Text style={styles.actionText}>📒 Transactions</Text>
-        </TouchableOpacity>
-
-        {/* View Insights Button */}
-        <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: COLORS.success }]}
-          onPress={() =>
-            router.push({
-              pathname: '/insights',
-              params: { bookId: item.id, bookName: item.name },
-            })
-          }
-        >
-          <Text style={styles.actionText}>📊 Insights</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    <TouchableOpacity
+      style={[
+        styles.item,
+        { backgroundColor: theme.card, borderColor: theme.border },
+      ]}
+      onPress={() =>
+        router.push({
+          pathname: '/transactions',
+          params: { bookId: item.id, bookName: item.name },
+        })
+      }
+      activeOpacity={0.8}
+    >
+      <Text style={[styles.bookName, { color: theme.textDark }]}>{item.name}</Text>
+      <Text style={[styles.businessName, { color: theme.textLight }]}>
+        🏢 {item.businessName}
+      </Text>
+    </TouchableOpacity>
   );
 
   return (
-    <ScreenContainer scrollable={false}>
-      <Text style={GLOBAL_STYLES.title}>All Books</Text>
-      <Text style={GLOBAL_STYLES.subtitle}>Select a book to view details</Text>
+    <ScreenContainer hasFloatingButtons={false}>
+      <Text style={[GLOBAL_STYLES.title, { color: theme.textDark }]}>Books</Text>
+      <Text style={[GLOBAL_STYLES.subtitle, { color: theme.textLight }]}>
+        Tap a book to view its transactions
+      </Text>
 
       <FlatList
         data={books}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ gap: 12, paddingBottom: 80 }}
-      />
-
-      {/* Add New Book Button */}
-      <CustomButton title="＋ Add New Book" onPress={() => setIsModalVisible(true)} />
-
-      {/* Add Book Modal */}
-      <Modal visible={isModalVisible} transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalCard}>
-            <Text style={GLOBAL_STYLES.title}>＋ Add New Book</Text>
-
-            <TextInput
-              style={styles.input}
-              placeholder="Book Name"
-              value={bookName}
-              onChangeText={setBookName}
-            />
-
-            <Text style={{ marginBottom: 6 }}>Select Business:</Text>
-            <Picker
-              selectedValue={selectedBusinessId}
-              style={styles.input}
-              onValueChange={(value) => setSelectedBusinessId(value)}
-            >
-              <Picker.Item label="Select Business" value="" />
-              {businesses.map((b) => (
-                <Picker.Item key={b.id} label={b.name} value={b.id} />
-              ))}
-            </Picker>
-
-            <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
-              <Button title="Cancel" onPress={() => setIsModalVisible(false)} />
-              <Button title="Save" onPress={handleAddBook} color={COLORS.primary} />
-            </View>
+        contentContainerStyle={styles.listContainer}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={[GLOBAL_STYLES.subtitle, { textAlign: 'center', color: theme.textLight }]}>
+              No books found. You can add new ones from Settings.
+            </Text>
           </View>
-        </View>
-      </Modal>
+        }
+      />
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
+  listContainer: {
+    gap: 10,
+    marginTop: 12,
+    paddingBottom: 80,
+  },
   item: {
-    backgroundColor: COLORS.card,
     padding: 14,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: COLORS.border,
     shadowColor: '#000',
     shadowOpacity: 0.05,
-    shadowRadius: 3,
+    shadowRadius: 4,
     elevation: 2,
   },
   bookName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textDark,
+    fontSize: 18,
+    fontWeight: '700',
   },
   businessName: {
     fontSize: 14,
-    color: COLORS.textLight,
     marginTop: 4,
-    marginBottom: 10,
   },
-  actionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  actionButton: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  actionText: {
-    color: 'white',
-    fontWeight: '600',
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalCard: {
-    backgroundColor: 'white',
-    width: '90%',
-    borderRadius: 12,
-    padding: 20,
-    elevation: 10,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 8,
-    padding: 10,
-    marginVertical: 10,
-    fontSize: 16,
+  emptyContainer: {
+    marginTop: 24,
   },
 });

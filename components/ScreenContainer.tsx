@@ -1,42 +1,26 @@
 // components/ScreenContainer.tsx
 import React from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView, View, StyleSheet } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import { COLORS } from '../constants/theme';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface Props {
   children: React.ReactNode;
-  scrollable?: boolean; // <- allow toggle
+  hasFloatingButtons?: boolean;
 }
 
-export default function ScreenContainer({ children, scrollable = true }: Props) {
-  const { theme } = useTheme() || {};
-  const insets = useSafeAreaInsets();
-  const background = theme?.background || COLORS.background;
-
-  if (scrollable) {
-    return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: background }]}>
-        <ScrollView
-          contentContainerStyle={[
-            styles.container,
-            { backgroundColor: background, paddingBottom: insets.bottom + 90 },
-          ]}
-          showsVerticalScrollIndicator={false}
-        >
-          {children}
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
+export default function ScreenContainer({ children, hasFloatingButtons = false }: Props) {
+  const { theme } = useTheme();
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: background }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <View
         style={[
           styles.container,
-          { backgroundColor: background, paddingBottom: insets.bottom + 90 },
+          {
+            backgroundColor: theme.background,
+            padding: 16,
+            paddingBottom: hasFloatingButtons ? 100 : 40,
+          },
         ]}
       >
         {children}
@@ -47,9 +31,5 @@ export default function ScreenContainer({ children, scrollable = true }: Props) 
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  container: {
-    flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
+  container: { flex: 1 },
 });

@@ -1,6 +1,3 @@
-// constants/theme.ts
-
-// Base light color palette — used as default and fallback
 export const COLORS = {
   primary: '#007bff',
   background: '#f8faff',
@@ -16,17 +13,18 @@ export const COLORS = {
 
 export const LIGHT_THEME = { name: 'light', ...COLORS };
 
+// 🌙 Refined full dark theme — smoother blending
 export const DARK_THEME = {
   name: 'dark',
-  primary: '#4e9eff',
-  background: '#0f172a',
-  textDark: '#f8fafc',
+  primary: '#3b82f6',
+  background: '#0d1117',
+  textDark: '#e2e8f0',
   textLight: '#94a3b8',
-  card: '#1e293b',
-  border: '#334155',
+  card: '#1a1f29', // darker card tone that blends in
+  border: '#2d3748',
   success: '#22c55e',
   danger: '#ef4444',
-  tabActive: '#4e9eff',
+  tabActive: '#3b82f6',
   tabInactive: '#64748b',
 };
 
@@ -71,12 +69,10 @@ export const GLOBAL_STYLES = {
   title: {
     fontSize: 20,
     fontWeight: '700' as const,
-    color: COLORS.textDark,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: COLORS.textLight,
     marginBottom: 16,
   },
 };

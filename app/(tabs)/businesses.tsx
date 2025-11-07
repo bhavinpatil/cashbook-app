@@ -1,17 +1,9 @@
-// app/(tabs)/businesses.tsx
 import React, { useCallback, useState } from 'react';
-import {
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { Text, FlatList, TouchableOpacity, StyleSheet, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import ScreenContainer from '../../components/ScreenContainer';
-import { GLOBAL_STYLES, COLORS } from '../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface Business {
   id: string;
@@ -20,7 +12,7 @@ interface Business {
 
 export default function BusinessesScreen() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
-  const router = useRouter();
+  const { theme } = useTheme();
 
   const loadBusinesses = async () => {
     try {
@@ -33,41 +25,27 @@ export default function BusinessesScreen() {
     }
   };
 
-  // reload when screen/tab gains focus
-  useFocusEffect(
-    useCallback(() => {
-      loadBusinesses();
-    }, [])
-  );
+  useFocusEffect(useCallback(() => { loadBusinesses(); }, []));
 
   const renderItem = ({ item }: { item: Business }) => (
-    <TouchableOpacity
-      style={styles.item}
-      onPress={() =>
-        router.push({
-          pathname: '/businesses/[businessId]/books',
-          params: { businessId: item.id, businessName: item.name },
-        })
-      }
-      activeOpacity={0.8}
-    >
-      <Text style={styles.itemTitle}>{item.name}</Text>
+    <TouchableOpacity style={[styles.item, { backgroundColor: theme.card, borderColor: theme.border }]} activeOpacity={0.9}>
+      <Text style={[styles.itemTitle, { color: theme.textDark }]}>{item.name}</Text>
     </TouchableOpacity>
   );
 
   return (
-     <ScreenContainer scrollable={false}>
-      <Text style={GLOBAL_STYLES.title}>Businesses</Text>
-      <Text style={GLOBAL_STYLES.subtitle}>Select a business</Text>
+    <ScreenContainer>
+      <Text style={[styles.title, { color: theme.textDark }]}>Businesses</Text>
+      <Text style={[styles.subtitle, { color: theme.textLight }]}>Select a business</Text>
 
       <FlatList
         data={businesses}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={{ gap: 12, paddingBottom: 80 }}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={[GLOBAL_STYLES.subtitle, { textAlign: 'center' }]}>
+          <View style={{ marginTop: 24 }}>
+            <Text style={[styles.subtitle, { color: theme.textLight, textAlign: 'center' }]}>
               No businesses found. You can add or manage businesses from Settings.
             </Text>
           </View>
@@ -78,29 +56,23 @@ export default function BusinessesScreen() {
 }
 
 const styles = StyleSheet.create({
-  listContainer: {
-    gap: 10,
-    marginTop: 12,
-    paddingBottom: 80,
-  },
-  item: {
-    backgroundColor: COLORS.card,
-    padding: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    // subtle shadow on Android/iOS
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  itemTitle: {
+  title: {
     fontSize: 20,
     fontWeight: '700',
-    color: COLORS.textDark,
+    marginBottom: 8,
   },
-  emptyContainer: {
-    marginTop: 24,
+  subtitle: {
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  item: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    elevation: 1,
+  },
+  itemTitle: {
+    fontSize: 18,
+    fontWeight: '600',
   },
 });
