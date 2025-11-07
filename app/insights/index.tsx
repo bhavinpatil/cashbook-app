@@ -5,6 +5,7 @@ import { useTransactions } from '../transactions/hooks/useTransactions';
 import Header from './components/Header';
 import SummaryTabs from './components/SummaryTabs';
 import SpendsChart from './components/SpendsChart';
+import IncomingChart from './components/IncomingChart';
 import dayjs from 'dayjs';
 
 export default function InsightsScreen() {
@@ -44,9 +45,7 @@ export default function InsightsScreen() {
       )}
 
       {activeTab === 'incoming' && (
-        <View style={{ alignItems: 'center', marginTop: 50 }}>
-          <Text style={{ color: '#555' }}>Incoming chart coming soon...</Text>
-        </View>
+        <IncomingChart transactions={transactions} currentMonth={currentMonth} />
       )}
 
       {activeTab === 'invested' && (
