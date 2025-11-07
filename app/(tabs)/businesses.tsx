@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import ScreenContainer from '@/components/ScreenContainer';
 import { useTheme } from '@/contexts/ThemeContext';
+import AnimatedScreenWrapper from '@/components/AnimatedScreenWrapper';
 
 interface Business {
   id: string;
@@ -56,23 +57,25 @@ export default function BusinessesScreen() {
 
   return (
     <ScreenContainer>
-      <Text style={[styles.title, { color: theme.textDark }]}>Your Businesses</Text>
+      <AnimatedScreenWrapper>
+        <Text style={[styles.title, { color: theme.textDark }]}>Your Businesses</Text>
 
-      <FlatList
-        data={businesses}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ gap: 12, paddingBottom: 80 }}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            {/* Temporary fallback until Lottie file is added */}
-            <Text style={{ fontSize: 50, color: theme.textLight }}>📚</Text>
-            <Text style={[styles.emptyText, { color: theme.textLight }]}>
-              No books yet. Add a new one from Settings.
-            </Text>
-          </View>
-        }
-      />
+        <FlatList
+          data={businesses}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={{ gap: 12, paddingBottom: 80 }}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              {/* Temporary fallback until Lottie file is added */}
+              <Text style={{ fontSize: 50, color: theme.textLight }}>📚</Text>
+              <Text style={[styles.emptyText, { color: theme.textLight }]}>
+                No books yet. Add a new one from Settings.
+              </Text>
+            </View>
+          }
+        />
+      </AnimatedScreenWrapper>
     </ScreenContainer>
   );
 }

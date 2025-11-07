@@ -17,6 +17,7 @@ import TripChart from '@/components/trips/TripChart';
 import AddTripModal from '@/components/trips/AddTripModal';
 import { useTrips, Trip } from '@/hooks/useTrips';
 import { useTheme } from '@/contexts/ThemeContext';
+import AnimatedScreenWrapper from '@/components/AnimatedScreenWrapper';
 
 export default function TripScreen() {
   const { theme } = useTheme();
@@ -70,6 +71,7 @@ export default function TripScreen() {
       </View>
 
       {/* Summary */}
+      <AnimatedScreenWrapper>
       {!showChart && <TripSummary trips={trips} />}
 
       {/* Conditional View */}
@@ -87,6 +89,7 @@ export default function TripScreen() {
           }}
         />
       )}
+      </AnimatedScreenWrapper>
 
       {/* Add/Edit Trip Modal */}
       <AddTripModal

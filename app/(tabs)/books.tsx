@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import ScreenContainer from '@/components/ScreenContainer';
 import { useTheme } from '@/contexts/ThemeContext';
+import AnimatedScreenWrapper from '@/components/AnimatedScreenWrapper';
 
 interface Book {
   id: string;
@@ -79,22 +80,24 @@ export default function BooksScreen() {
 
   return (
     <ScreenContainer>
-      <Text style={[styles.title, { color: theme.textDark }]}>Books</Text>
+      <AnimatedScreenWrapper>
+        <Text style={[styles.title, { color: theme.textDark }]}>Books</Text>
 
-      <FlatList
-        data={books}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={{ fontSize: 50, color: theme.textLight }}>📚</Text>
-            <Text style={[styles.emptyText, { color: theme.textLight }]}>
-              No books yet. Add a new one from Settings.
-            </Text>
-          </View>
-        }
-      />
+        <FlatList
+          data={books}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContainer}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={{ fontSize: 50, color: theme.textLight }}>📚</Text>
+              <Text style={[styles.emptyText, { color: theme.textLight }]}>
+                No books yet. Add a new one from Settings.
+              </Text>
+            </View>
+          }
+        />
+      </AnimatedScreenWrapper>
     </ScreenContainer>
   );
 }
