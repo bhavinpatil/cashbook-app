@@ -152,6 +152,7 @@ export default function TransactionsScreen() {
         onAdd={addTransaction}
         categories={categories}
         defaultType={selectedType}
+        bookId={bookId as string} // ✅ add this line
       />
 
       {/* Edit Modal */}

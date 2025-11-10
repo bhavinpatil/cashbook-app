@@ -1,5 +1,4 @@
-// app/insights/components/Header.tsx
-
+// components/insights/Header.tsx
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,7 +12,13 @@ export default function Header({
   setCurrentMonth: (m: dayjs.Dayjs) => void;
 }) {
   const goToPrevMonth = () => setCurrentMonth(currentMonth.subtract(1, 'month'));
-  const goToNextMonth = () => setCurrentMonth(currentMonth.add(1, 'month'));
+
+  const goToNextMonth = () => {
+    const next = currentMonth.add(1, 'month');
+    // Prevent navigating beyond current month
+    if (next.isAfter(dayjs(), 'month')) return;
+    setCurrentMonth(next);
+  };
 
   return (
     <View style={styles.header}>
@@ -23,8 +28,16 @@ export default function Header({
 
       <Text style={styles.monthLabel}>{currentMonth.format('MMMM YYYY')}</Text>
 
-      <TouchableOpacity style={styles.iconButton} onPress={goToNextMonth}>
-        <Ionicons name="chevron-forward" size={28} color="#111" />
+      <TouchableOpacity
+        style={styles.iconButton}
+        onPress={goToNextMonth}
+        disabled={currentMonth.isSame(dayjs(), 'month')}
+      >
+        <Ionicons
+          name="chevron-forward"
+          size={28}
+          color={currentMonth.isSame(dayjs(), 'month') ? '#aaa' : '#111'}
+        />
       </TouchableOpacity>
     </View>
   );

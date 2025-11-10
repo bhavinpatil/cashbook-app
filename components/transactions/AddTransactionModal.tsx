@@ -1,5 +1,4 @@
-//
-
+// components/transactions/AddTransactionModal.tsx
 import CustomButton from '@/components/CustomButton';
 import { useTheme } from '@/contexts/ThemeContext';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
@@ -19,6 +18,7 @@ import {
     View,
 } from 'react-native';
 import { Transaction } from '@/types/types';
+import { eventBus } from '@/contexts/EventBus';
 
 interface Props {
     visible: boolean;
@@ -26,6 +26,7 @@ interface Props {
     onAdd: (tx: Transaction) => void;
     categories?: string[];
     defaultType?: 'credit' | 'debit';
+    bookId: string; // ✅ add this
 }
 
 export default function AddTransactionModal({
@@ -34,6 +35,7 @@ export default function AddTransactionModal({
     onAdd,
     categories = [],
     defaultType = 'credit',
+    bookId,
 }: Props) {
     const { theme } = useTheme();
     const [type, setType] = useState<'credit' | 'debit'>('credit');
@@ -147,7 +149,7 @@ export default function AddTransactionModal({
 
         const newTx: Transaction = {
             id: randomUUID(),
-            bookId: '',
+            bookId, // ✅ use the real book ID
             type,
             amount: Number(amount),
             description,
@@ -158,7 +160,11 @@ export default function AddTransactionModal({
 
         onAdd(newTx);
         onClose();
+
+        // ✅ Emit global event after transaction is added
+        eventBus.emitUpdate('transactions');
     };
+
 
     return (
         <Modal visible={visible} transparent animationType="slide">

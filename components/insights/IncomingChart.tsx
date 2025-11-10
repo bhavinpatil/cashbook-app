@@ -1,5 +1,4 @@
-// app/insights/components/IncomingChart.tsx
-
+// components/insights/IncomingChart.tsx
 import React, { useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { LineChart, BarChart } from 'react-native-chart-kit';

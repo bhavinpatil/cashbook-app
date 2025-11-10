@@ -1,5 +1,4 @@
-// app/insights/components/SummaryTabs.tsx
-
+// components/insights/SummaryTabs.tsx
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import dayjs from 'dayjs';
@@ -10,8 +9,8 @@ export default function SummaryTabs({
   transactions,
   currentMonth,
 }: {
-  activeTab: 'spends' | 'invested' | 'incoming';
-  setActiveTab: (t: 'spends' | 'invested' | 'incoming') => void;
+  activeTab: 'spends' | 'incoming';
+  setActiveTab: (t: 'spends' | 'incoming') => void;
   transactions: any[];
   currentMonth: dayjs.Dayjs;
 }) {
@@ -23,33 +22,30 @@ export default function SummaryTabs({
     .filter(tx => tx.type === 'credit')
     .reduce((sum, tx) => sum + tx.amount, 0);
 
+  const tabs: ('spends' | 'incoming')[] = ['spends', 'incoming'];
+
   return (
     <View style={styles.summaryTabs}>
-      {['spends', 'invested', 'incoming'].map(tab => (
+      {tabs.map(tab => (
         <TouchableOpacity
           key={tab}
-          onPress={() => setActiveTab(tab as any)}
+          onPress={() => setActiveTab(tab)}
           style={[styles.tabItem, activeTab === tab && styles.activeTab]}
         >
           <Text style={styles.tabLabel}>
-            {tab === 'spends' ? 'Spends' : tab === 'invested' ? 'Invested' : 'Incoming'}
+            {tab === 'spends' ? 'Spends' : 'Incoming'}
           </Text>
           <Text
             style={[
               styles.tabValue,
               tab === 'spends'
                 ? { color: '#e63946' }
-                : tab === 'incoming'
-                ? { color: '#2a9d8f' }
-                : {},
+                : { color: '#2a9d8f' },
             ]}
           >
-            ₹
-            {tab === 'spends'
+            ₹{tab === 'spends'
               ? spendsTotal.toFixed(0)
-              : tab === 'incoming'
-              ? incomeTotal.toFixed(0)
-              : '0'}
+              : incomeTotal.toFixed(0)}
           </Text>
         </TouchableOpacity>
       ))}

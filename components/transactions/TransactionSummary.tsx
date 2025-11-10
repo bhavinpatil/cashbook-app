@@ -1,5 +1,4 @@
-// app/transactions/components/TransactionSummary.tsx
-
+// components/transactions/TransactionSummary.tsx
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -58,19 +57,6 @@ export default function TransactionSummary({
           ₹{balance.toFixed(2)}
         </Text>
       </View>
-
-      {/* View Insights Button */}
-      <TouchableOpacity
-        onPress={onViewInsights}
-        activeOpacity={0.85}
-        style={[
-          styles.insightButton,
-          { backgroundColor: theme.primary, shadowColor: theme.primary },
-        ]}
-      >
-        <Ionicons name="bar-chart-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
-        <Text style={styles.insightText}>View Insights</Text>
-      </TouchableOpacity>
     </View>
   );
 }

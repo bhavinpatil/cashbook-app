@@ -1,7 +1,9 @@
-// app/transactions/hooks/useTransactions.ts
+// hooks/useTransactions.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import { Transaction } from '@/types/types';
+import { eventBus } from '@/contexts/EventBus';
+
 export const useTransactions = (bookId: string) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,8 +21,12 @@ export const useTransactions = (bookId: string) => {
   }, [bookId]);
 
   useEffect(() => {
-    if (!loading && bookId)
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+    if (!loading && bookId) {
+      (async () => {
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+        eventBus.emitUpdate('transactions'); // ✅ fire event after actual save
+      })();
+    }
   }, [transactions, bookId, loading]);
 
   useEffect(() => {
@@ -30,11 +36,22 @@ export const useTransactions = (bookId: string) => {
     setCategories(uniqueCategories);
   }, [transactions]);
 
-  const addTransaction = (tx: Transaction) => setTransactions((prev) => [tx, ...prev]);
-  const deleteTransaction = (id: string) =>
+  const addTransaction = (tx: Transaction) => {
+    setTransactions((prev) => [tx, ...prev]);
+    eventBus.emitUpdate('transactions'); // ✅
+  };
+
+  const deleteTransaction = (id: string) => {
     setTransactions((prev) => prev.filter((t) => t.id !== id));
-  const updateTransaction = (updated: Transaction) =>
-    setTransactions((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+    eventBus.emitUpdate('transactions'); // ✅
+  };
+
+  const updateTransaction = (updated: Transaction) => {
+    setTransactions((prev) =>
+      prev.map((t) => (t.id === updated.id ? updated : t))
+    );
+    eventBus.emitUpdate('transactions'); // ✅
+  };
 
   return { transactions, addTransaction, deleteTransaction, updateTransaction, loading, categories };
 };

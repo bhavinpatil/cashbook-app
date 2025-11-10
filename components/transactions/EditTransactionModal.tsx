@@ -1,5 +1,4 @@
 // components/transactions/EditTransactionModal.tsx
-
 import CustomButton from '@/components/CustomButton';
 import { useTheme } from '@/contexts/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,6 +19,9 @@ import {
     View,
 } from 'react-native';
 import { Transaction } from '@/types/types';
+import { eventBus } from '@/contexts/EventBus';
+
+
 interface Props {
     visible: boolean;
     onClose: () => void;
@@ -110,7 +112,11 @@ export default function EditTransactionModal({
             date: date.toISOString(),
         };
 
-        onUpdate(updatedTx);
+        onUpdate(updatedTx); // ✅ update locally (parent handles AsyncStorage)
+        onClose(); // ✅ close modal
+
+        // ✅ Notify all screens using useSmartReload('transactions', ...)
+        eventBus.emitUpdate('transactions');
     };
 
     const handleAddCategory = async () => {

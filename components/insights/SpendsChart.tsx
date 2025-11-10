@@ -1,3 +1,4 @@
+// components/insights/SpendsChart.tsx
 import React, { useMemo, useState, useEffect } from 'react';
 import {
     View,
@@ -20,7 +21,7 @@ export default function SpendsChart({
 }: {
     transactions: any[];
     currentMonth: dayjs.Dayjs;
-    bookId: string;
+    bookId?: string; // ✅ Optional now
 }) {
     const { loadBudget, saveBudget } = useBudget();
 
@@ -29,21 +30,24 @@ export default function SpendsChart({
     const [tempBudget, setTempBudget] = useState<string>('0');
     const [isDaily, setIsDaily] = useState(true);
 
-    // 🧠 Load budget for current month
+    // 🧠 Load budget only if bookId provided
     useEffect(() => {
+        if (!bookId) return;
         (async () => {
             const saved = await loadBudget(bookId, currentMonth);
             if (saved) setBudget(saved);
         })();
     }, [bookId, currentMonth]);
 
-    // 💾 Save when updated
+    // 💾 Save budget (if per-book mode)
     const handleSaveBudget = async (newBudget: number) => {
         setBudget(newBudget);
-        await saveBudget(bookId, currentMonth, newBudget);
+        if (bookId) {
+            await saveBudget(bookId, currentMonth, newBudget);
+        }
     };
 
-    // 🔢 Filter transactions for current and previous months
+    // 🔢 Filter transactions for current + previous months
     const monthTx = useMemo(
         () => transactions.filter(tx => dayjs(tx.date).isSame(currentMonth, 'month')),
         [transactions, currentMonth]
@@ -60,21 +64,19 @@ export default function SpendsChart({
     const daysInMonth = currentMonth.daysInMonth();
     const labels = Array.from({ length: daysInMonth }, (_, i) => String(i + 1));
 
-    // 🧮 Daily + Cumulative Debits (expenses)
+    // 🧮 Daily debit totals
     const dailyDebit = Array(daysInMonth).fill(0);
     monthTx.forEach(tx => {
         const day = dayjs(tx.date).date() - 1;
         if (tx.type === 'debit') dailyDebit[day] += tx.amount;
     });
 
-    // Convert to cumulative
+    // Cumulative data
     const cumulativeDebit = dailyDebit.reduce((acc, val, i) => {
-        if (i === 0) acc[i] = val;
-        else acc[i] = acc[i - 1] + val;
+        acc[i] = (i === 0 ? val : acc[i - 1] + val);
         return acc;
     }, [] as number[]);
 
-    // 📆 Limit chart to today's date
     const today = dayjs();
     const isCurrentMonth = today.isSame(currentMonth, 'month');
     const daysToShow = isCurrentMonth ? today.date() : daysInMonth;
@@ -84,9 +86,9 @@ export default function SpendsChart({
     const spendsTotal = visibleData[visibleData.length - 1] || 0;
     const lastMonthSpends = prevMonthTx
         .filter(tx => tx.type === 'debit')
-        .reduce((a, b) => a + b, 0);
+        .reduce((sum, tx) => sum + tx.amount, 0);
 
-    // 📊 Monthly Spends (last 6 months)
+    // 📊 Monthly Spends for last 6 months
     const monthlyLabels: string[] = [];
     const monthlySpends: number[] = [];
     for (let i = 5; i >= 0; i--) {
@@ -98,37 +100,33 @@ export default function SpendsChart({
         monthlySpends.push(total);
     }
 
-    // 💰 Format Y-axis
+    // 💰 Format Y-axis labels
     const formatYAxis = (value: any) => {
         const num = Number(value);
-        if (isNaN(num) || num === undefined || num === null) return '0';
+        if (isNaN(num)) return '0';
         if (num >= 100000) return `${(num / 100000).toFixed(1)}L`;
         if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
         return num.toFixed(0);
     };
 
     const chartConfig = {
-        backgroundColor: '#ffffff',
-        backgroundGradientFrom: '#ffffff',
-        backgroundGradientTo: '#ffffff',
+        backgroundColor: '#fff',
+        backgroundGradientFrom: '#fff',
+        backgroundGradientTo: '#fff',
         decimalPlaces: 0,
-        color: (opacity = 1) => `rgba(30, 30, 30, ${opacity})`,
-        labelColor: (opacity = 1) => `rgba(60, 60, 60, ${opacity})`,
+        color: (opacity = 1) => `rgba(30,30,30,${opacity})`,
+        labelColor: (opacity = 1) => `rgba(60,60,60,${opacity})`,
         propsForBackgroundLines: { strokeDasharray: '4', strokeWidth: 0.5 },
-        fillShadowGradientFrom: '#e63946',
-        fillShadowGradientFromOpacity: 0.15,
-        fillShadowGradientTo: '#fbe9eb',
-        fillShadowGradientToOpacity: 0.05,
     };
 
     return (
         <>
-            {/* Summary Section */}
+            {/* Budget Summary */}
             <View style={styles.comparisonContainer}>
                 <TouchableOpacity style={styles.comparisonBox} onPress={() => setShowBudgetModal(true)}>
                     <Text style={styles.smallText}>This month so far</Text>
                     <Text style={[styles.valueText, { color: '#e63946' }]}>
-                        ₹{spendsTotal.toFixed(0)} / ₹{budget.toLocaleString()}
+                        ₹{spendsTotal.toFixed(0)} {bookId ? `/ ₹${budget.toLocaleString()}` : ''}
                     </Text>
                 </TouchableOpacity>
                 <View style={styles.comparisonBox}>
@@ -146,61 +144,24 @@ export default function SpendsChart({
                 </Text>
 
                 {isDaily ? (
-                    <>
-                        {/* 📈 Daily Cumulative Spend Line */}
-                        <LineChart
-                            data={{
-                                labels: visibleLabels,
-                                datasets: [
-                                    {
-                                        data: visibleData,
-                                        color: () => '#e63946',
-                                        strokeWidth: 2,
-                                    },
-                                    {
-                                        data: Array(visibleData.length).fill(budget),
-                                        color: () => '#888',
-                                        strokeWidth: 1,
-                                    },
-                                ],
-                            }}
-                            width={screenWidth - 60}
-                            height={260}
-                            yAxisLabel="₹"
-                            formatYLabel={(v) => formatYAxis(Number(v))}
-                            formatXLabel={(xValue) => {
-                                const day = Number(xValue);
-                                const visibleDays = [1, Math.ceil(daysToShow / 2), daysToShow];
-                                return visibleDays.includes(day)
-                                    ? `${day} ${currentMonth.format('MMM')}`
-                                    : '';
-                            }}
-                            chartConfig={chartConfig}
-                            fromZero
-                            withOuterLines={false}
-                            withInnerLines
-                            withHorizontalLabels
-                            bezier
-                            segments={5}
-                            style={{ borderRadius: 12 }}
-                        />
-
-                        {/* Marker for Today's Spend */}
-                        {isCurrentMonth && (
-                            <View
-                                style={{
-                                    position: 'absolute',
-                                    bottom: 72,
-                                    left: `${(daysToShow / daysInMonth) * 89}%`,
-                                    flexDirection: 'row',
-                                    alignItems: 'center',
-                                }}
-                            >
-                            </View>
-                        )}
-                    </>
+                    <LineChart
+                        data={{
+                            labels: visibleLabels,
+                            datasets: [{ data: visibleData, color: () => '#e63946', strokeWidth: 2 }],
+                        }}
+                        width={screenWidth - 60}
+                        height={260}
+                        yAxisLabel="₹"
+                        formatYLabel={(v) => formatYAxis(Number(v))}
+                        chartConfig={chartConfig}
+                        fromZero
+                        withInnerLines
+                        withHorizontalLabels
+                        bezier
+                        segments={5}
+                        style={{ borderRadius: 12 }}
+                    />
                 ) : (
-                    // 📊 Monthly Bar Chart (same height)
                     <BarChart
                         data={{
                             labels: monthlyLabels,
@@ -209,18 +170,17 @@ export default function SpendsChart({
                         width={screenWidth - 60}
                         height={260}
                         yAxisLabel="₹"
-                        yAxisSuffix=""
+                        yAxisSuffix=""   // ✅ Added this line
                         fromZero
-                        showValuesOnTopOfBars
-                        withInnerLines
                         chartConfig={{
                             ...chartConfig,
                             barPercentage: 0.6,
-                            color: (opacity = 1) => `rgba(230, 57, 70, ${opacity})`,
-                            labelColor: (opacity = 1) => `rgba(60, 60, 60, ${opacity})`,
+                            color: (opacity = 1) => `rgba(230,57,70,${opacity})`,
+                            labelColor: (opacity = 1) => `rgba(60,60,60,${opacity})`,
                         }}
                         style={{ borderRadius: 12 }}
                     />
+
                 )}
 
                 {/* Toggle Buttons */}
@@ -240,21 +200,23 @@ export default function SpendsChart({
                 </View>
             </View>
 
-            {/* Budget Modal */}
-            <BudgetModal
-                visible={showBudgetModal}
-                budget={budget}
-                tempBudget={tempBudget}
-                setTempBudget={setTempBudget}
-                onCancel={() => {
-                    setShowBudgetModal(false);
-                    setTempBudget(String(budget));
-                }}
-                onSave={(newBudget) => {
-                    handleSaveBudget(newBudget);
-                    setShowBudgetModal(false);
-                }}
-            />
+            {/* Budget Modal (shown only if bookId exists) */}
+            {bookId && (
+                <BudgetModal
+                    visible={showBudgetModal}
+                    budget={budget}
+                    tempBudget={tempBudget}
+                    setTempBudget={setTempBudget}
+                    onCancel={() => {
+                        setShowBudgetModal(false);
+                        setTempBudget(String(budget));
+                    }}
+                    onSave={(newBudget) => {
+                        handleSaveBudget(newBudget);
+                        setShowBudgetModal(false);
+                    }}
+                />
+            )}
         </>
     );
 }
