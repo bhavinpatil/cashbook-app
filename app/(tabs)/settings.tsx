@@ -1,17 +1,17 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Animated, StyleSheet } from 'react-native';
+// app/(tabs)/settings.tsx
 import EditNameModal from '@/components/EditNameModal';
 import ScrollableScreenContainer from '@/components/ScrollableScreenContainer';
-import { useTheme } from '@/contexts/ThemeContext';
-import { Book, Business } from '@/types/types';
 import AddBookModal from '@/components/settings/AddBookModal';
 import AddBusinessModal from '@/components/settings/AddBusinessModal';
 import BookSection from '@/components/settings/BookSection';
 import BusinessSection from '@/components/settings/BusinessSection';
 import ThemeSelector from '@/components/settings/ThemeSelector';
-import AnimatedScreenWrapper from '@/components/AnimatedScreenWrapper';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Book, Business } from '@/types/types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useCallback, useState } from 'react';
+import { Alert, StyleSheet, View } from 'react-native';
 
 type SelectedItem =
   | { id: string; type: 'business' }
@@ -30,33 +30,7 @@ export default function SettingsScreen() {
   const [selectedBusinessId, setSelectedBusinessId] = useState('');
   const { theme } = useTheme();
 
-  // ✅ Animation refs (same style as Business screen)
-  const scaleBusiness = useRef(new Animated.Value(0.9)).current;
-  const opacityBusiness = useRef(new Animated.Value(0)).current;
-  const scaleBooks = useRef(new Animated.Value(0.9)).current;
-  const opacityBooks = useRef(new Animated.Value(0)).current;
-  const scaleTheme = useRef(new Animated.Value(0.9)).current;
-  const opacityTheme = useRef(new Animated.Value(0)).current;
-
-  // ✅ Animate once when screen mounts (not on each update)
-  useEffect(() => {
-    Animated.stagger(100, [
-      Animated.parallel([
-        Animated.timing(scaleBusiness, { toValue: 1, duration: 300, useNativeDriver: true }),
-        Animated.timing(opacityBusiness, { toValue: 1, duration: 300, useNativeDriver: true }),
-      ]),
-      Animated.parallel([
-        Animated.timing(scaleBooks, { toValue: 1, duration: 300, useNativeDriver: true }),
-        Animated.timing(opacityBooks, { toValue: 1, duration: 300, useNativeDriver: true }),
-      ]),
-      Animated.parallel([
-        Animated.timing(scaleTheme, { toValue: 1, duration: 300, useNativeDriver: true }),
-        Animated.timing(opacityTheme, { toValue: 1, duration: 300, useNativeDriver: true }),
-      ]),
-    ]).start();
-  }, []);
-
-  // ✅ Load data from AsyncStorage
+  // Load data from AsyncStorage
   const loadData = async (): Promise<void> => {
     try {
       const bData = await AsyncStorage.getItem('businesses');
@@ -83,7 +57,6 @@ export default function SettingsScreen() {
     }, [])
   );
 
-  // ✅ Delete Business with confirmation
   const deleteBusiness = (id: string) => {
     Alert.alert('Delete Business?', 'This will remove all its books as well.', [
       { text: 'Cancel', style: 'cancel' },
@@ -108,7 +81,6 @@ export default function SettingsScreen() {
     ]);
   };
 
-  // ✅ Delete Book with confirmation
   const deleteBook = (id: string) => {
     Alert.alert('Delete Book?', '', [
       { text: 'Cancel', style: 'cancel' },
@@ -126,7 +98,6 @@ export default function SettingsScreen() {
     ]);
   };
 
-  // ✅ Save edited name
   const handleEditSave = async (newName: string): Promise<void> => {
     if (!selectedItem || !newName.trim()) return;
 
@@ -148,94 +119,90 @@ export default function SettingsScreen() {
     loadData();
   };
 
-  // ✅ UI
   return (
-    <AnimatedScreenWrapper>
-      <ScrollableScreenContainer>
+    <ScrollableScreenContainer>
+      {/* --- Theme Selector --- */}
+      <View style={{ marginBottom: 20 }}>
+        <ThemeSelector />
+      </View>
 
-        {/* --- Theme Selector --- */}
-        <Animated.View style={{ transform: [{ scale: scaleTheme }], opacity: opacityTheme, marginBottom: 20 }}>
-          <ThemeSelector />
-        </Animated.View>
-
-        {/* --- Businesses --- */}
-        <Animated.View style={{ transform: [{ scale: scaleBusiness }], opacity: opacityBusiness }}>
-          <BusinessSection
-            businesses={businesses}
-            onAdd={() => setAddBusinessVisible(true)}
-            onEdit={(id) => {
-              setSelectedItem({ id, type: 'business' });
-              setEditVisible(true);
-            }}
-            onDelete={deleteBusiness} // now uses Alert again
-          />
-        </Animated.View>
-
-        {/* --- Books --- */}
-        <Animated.View style={{ transform: [{ scale: scaleBooks }], opacity: opacityBooks }}>
-          <BookSection
-            books={books}
-            onAdd={() => setAddBookVisible(true)}
-            onEdit={(id) => {
-              setSelectedItem({ id, type: 'book' });
-              setEditVisible(true);
-            }}
-            onDelete={deleteBook} // restored Alert confirm
-          />
-        </Animated.View>
-
-        {/* --- Add Business Modal --- */}
-        <AddBusinessModal
-          visible={addBusinessVisible}
-          onClose={() => setAddBusinessVisible(false)}
-          value={newBusinessName}
-          setValue={setNewBusinessName}
-          onSave={(name) => {
-            if (!name.trim()) return Alert.alert('Enter business name');
-            const newItem = { id: Date.now().toString(), name: name.trim() };
-            AsyncStorage.setItem('businesses', JSON.stringify([...businesses, newItem]));
-            setAddBusinessVisible(false);
-            setNewBusinessName('');
-            loadData();
-          }}
-        />
-
-        {/* --- Add Book Modal --- */}
-        <AddBookModal
-          visible={addBookVisible}
-          onClose={() => setAddBookVisible(false)}
-          value={newBookName}
-          setValue={setNewBookName}
-          selectedBusiness={selectedBusinessId}
-          setSelectedBusiness={setSelectedBusinessId}
+      {/* --- Businesses --- */}
+      <View>
+        <BusinessSection
           businesses={businesses}
-          onSave={(bookName, businessId) => {
-            if (!bookName.trim()) return Alert.alert('Enter book name');
-            if (!businessId) return Alert.alert('Select a business');
-            const id = Math.random().toString(36).slice(2, 9);
-            const newBook = { id, name: bookName.trim(), businessId };
-            AsyncStorage.getItem('books').then((data) => {
-              const existing = data ? JSON.parse(data) : [];
-              existing.push(newBook);
-              AsyncStorage.setItem('books', JSON.stringify(existing));
-              setAddBookVisible(false);
-              setNewBookName('');
-              setSelectedBusinessId('');
-              loadData();
-            });
+          onAdd={() => setAddBusinessVisible(true)}
+          onEdit={(id) => {
+            setSelectedItem({ id, type: 'business' });
+            setEditVisible(true);
           }}
+          onDelete={deleteBusiness}
         />
+      </View>
 
-        {/* --- Edit Modal --- */}
-        <EditNameModal
-          visible={editVisible}
-          initialValue=""
-          title="Edit Name"
-          onSave={handleEditSave}
-          onClose={() => setEditVisible(false)}
+      {/* --- Books --- */}
+      <View>
+        <BookSection
+          books={books}
+          onAdd={() => setAddBookVisible(true)}
+          onEdit={(id) => {
+            setSelectedItem({ id, type: 'book' });
+            setEditVisible(true);
+          }}
+          onDelete={deleteBook}
         />
-      </ScrollableScreenContainer>
-    </AnimatedScreenWrapper>
+      </View>
+
+      {/* --- Add Business Modal --- */}
+      <AddBusinessModal
+        visible={addBusinessVisible}
+        onClose={() => setAddBusinessVisible(false)}
+        value={newBusinessName}
+        setValue={setNewBusinessName}
+        onSave={(name) => {
+          if (!name.trim()) return Alert.alert('Enter business name');
+          const newItem = { id: Date.now().toString(), name: name.trim() };
+          AsyncStorage.setItem('businesses', JSON.stringify([...businesses, newItem]));
+          setAddBusinessVisible(false);
+          setNewBusinessName('');
+          loadData();
+        }}
+      />
+
+      {/* --- Add Book Modal --- */}
+      <AddBookModal
+        visible={addBookVisible}
+        onClose={() => setAddBookVisible(false)}
+        value={newBookName}
+        setValue={setNewBookName}
+        selectedBusiness={selectedBusinessId}
+        setSelectedBusiness={setSelectedBusinessId}
+        businesses={businesses}
+        onSave={(bookName, businessId) => {
+          if (!bookName.trim()) return Alert.alert('Enter book name');
+          if (!businessId) return Alert.alert('Select a business');
+          const id = Math.random().toString(36).slice(2, 9);
+          const newBook = { id, name: bookName.trim(), businessId };
+          AsyncStorage.getItem('books').then((data) => {
+            const existing = data ? JSON.parse(data) : [];
+            existing.push(newBook);
+            AsyncStorage.setItem('books', JSON.stringify(existing));
+            setAddBookVisible(false);
+            setNewBookName('');
+            setSelectedBusinessId('');
+            loadData();
+          });
+        }}
+      />
+
+      {/* --- Edit Modal --- */}
+      <EditNameModal
+        visible={editVisible}
+        initialValue=""
+        title="Edit Name"
+        onSave={handleEditSave}
+        onClose={() => setEditVisible(false)}
+      />
+    </ScrollableScreenContainer>
   );
 }
 

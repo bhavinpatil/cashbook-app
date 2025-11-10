@@ -1,12 +1,10 @@
 // app/(tabs)/businesses.tsx
-
-import React, { useCallback, useState } from 'react';
-import { Text, FlatList, TouchableOpacity, StyleSheet, View, Animated } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
 import ScreenContainer from '@/components/ScreenContainer';
 import { useTheme } from '@/contexts/ThemeContext';
-import AnimatedScreenWrapper from '@/components/AnimatedScreenWrapper';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useCallback, useState } from 'react';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface Business {
   id: string;
@@ -15,6 +13,7 @@ interface Business {
 
 export default function BusinessesScreen() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false); // ✅ simple first-load flag
   const { theme } = useTheme();
 
   const loadBusinesses = async () => {
@@ -24,58 +23,50 @@ export default function BusinessesScreen() {
     } catch (error) {
       console.error('Failed to load businesses:', error);
       setBusinesses([]);
+    } finally {
+      setIsLoaded(true); // ✅ only show UI after first load
     }
   };
 
   useFocusEffect(useCallback(() => { loadBusinesses(); }, []));
 
-  const renderItem = ({ item, index }: { item: Business; index: number }) => {
-    const scale = new Animated.Value(0.9);
-    const opacity = new Animated.Value(0);
+  const renderItem = ({ item }: { item: Business }) => (
+    <TouchableOpacity
+      style={[
+        styles.item,
+        {
+          backgroundColor: theme.card,
+          borderColor: theme.border,
+          shadowColor: theme.name === 'dark' ? '#000' : theme.primary,
+        },
+      ]}
+      activeOpacity={0.85}
+    >
+      <Text style={[styles.itemTitle, { color: theme.textDark }]}>{item.name}</Text>
+    </TouchableOpacity>
+  );
 
-    Animated.timing(scale, { toValue: 1, duration: 300, useNativeDriver: true }).start();
-    Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true }).start();
-
-    return (
-      <Animated.View style={{ transform: [{ scale }], opacity }}>
-        <TouchableOpacity
-          style={[
-            styles.item,
-            {
-              backgroundColor: theme.card,
-              borderColor: theme.border,
-              shadowColor: theme.name === 'dark' ? '#000' : theme.primary,
-            },
-          ]}
-          activeOpacity={0.85}
-        >
-          <Text style={[styles.itemTitle, { color: theme.textDark }]}>{item.name}</Text>
-        </TouchableOpacity>
-      </Animated.View>
-    );
-  };
+  // ✅ Render nothing until AsyncStorage load finishes
+  if (!isLoaded) return null;
 
   return (
     <ScreenContainer>
-      <AnimatedScreenWrapper>
-        <Text style={[styles.title, { color: theme.textDark }]}>Your Businesses</Text>
+      <Text style={[styles.title, { color: theme.textDark }]}>Your Businesses</Text>
 
-        <FlatList
-          data={businesses}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ gap: 12, paddingBottom: 80 }}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              {/* Temporary fallback until Lottie file is added */}
-              <Text style={{ fontSize: 50, color: theme.textLight }}>📚</Text>
-              <Text style={[styles.emptyText, { color: theme.textLight }]}>
-                No books yet. Add a new one from Settings.
-              </Text>
-            </View>
-          }
-        />
-      </AnimatedScreenWrapper>
+      <FlatList
+        data={businesses}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ gap: 12, paddingBottom: 80 }}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={{ fontSize: 50, color: theme.textLight }}>🏢</Text>
+            <Text style={[styles.emptyText, { color: theme.textLight }]}>
+              No businesses yet. Add a new one from Settings.
+            </Text>
+          </View>
+        }
+      />
     </ScreenContainer>
   );
 }

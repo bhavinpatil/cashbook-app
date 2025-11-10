@@ -1,23 +1,22 @@
 // app/(tabs)/fuel.tsx
+import { Ionicons } from '@expo/vector-icons';
+import { Stack } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  Alert,
+    Alert,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { Stack } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
-import TripSummary from '@/components/trips/TripSummary';
-import TripList from '@/components/trips/TripList';
-import TripChart from '@/components/trips/TripChart';
 import AddTripModal from '@/components/trips/AddTripModal';
-import { useTrips, Trip } from '@/hooks/useTrips';
+import TripChart from '@/components/trips/TripChart';
+import TripList from '@/components/trips/TripList';
+import TripSummary from '@/components/trips/TripSummary';
 import { useTheme } from '@/contexts/ThemeContext';
-import AnimatedScreenWrapper from '@/components/AnimatedScreenWrapper';
+import { Trip, useTrips } from '@/hooks/useTrips';
 
 export default function TripScreen() {
   const { theme } = useTheme();
@@ -71,7 +70,7 @@ export default function TripScreen() {
       </View>
 
       {/* Summary */}
-      <AnimatedScreenWrapper>
+      
       {!showChart && <TripSummary trips={trips} />}
 
       {/* Conditional View */}
@@ -89,7 +88,7 @@ export default function TripScreen() {
           }}
         />
       )}
-      </AnimatedScreenWrapper>
+      
 
       {/* Add/Edit Trip Modal */}
       <AddTripModal

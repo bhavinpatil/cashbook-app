@@ -1,13 +1,11 @@
 // app/(tabs)/books.tsx
-
-import React, { useState, useCallback } from 'react';
-import { Text, FlatList, TouchableOpacity, StyleSheet, View, Animated } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
 import ScreenContainer from '@/components/ScreenContainer';
 import { useTheme } from '@/contexts/ThemeContext';
-import AnimatedScreenWrapper from '@/components/AnimatedScreenWrapper';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface Book {
   id: string;
@@ -25,6 +23,7 @@ export default function BooksScreen() {
   const router = useRouter();
   const { theme } = useTheme();
   const [books, setBooks] = useState<Book[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false); // ✅ simple mount flag
 
   const loadBooks = async () => {
     try {
@@ -41,63 +40,55 @@ export default function BooksScreen() {
       setBooks(combined);
     } catch (error) {
       console.error('Error loading books:', error);
+    } finally {
+      setIsLoaded(true); // ✅ render only after one load attempt
     }
   };
 
   useFocusEffect(useCallback(() => { loadBooks(); }, []));
 
-  const renderItem = ({ item }: { item: Book }) => {
-    // ✅ Same animation logic as Businesses screen
-    const scale = new Animated.Value(0.9);
-    const opacity = new Animated.Value(0);
+  const renderItem = ({ item }: { item: Book }) => (
+    <TouchableOpacity
+      style={[
+        styles.item,
+        { backgroundColor: theme.card, borderColor: theme.border },
+      ]}
+      activeOpacity={0.85}
+      onPress={() =>
+        router.push({
+          pathname: '/transactions',
+          params: { bookId: item.id, bookName: item.name },
+        })
+      }
+    >
+      <Text style={[styles.bookName, { color: theme.textDark }]}>{item.name}</Text>
+      <Text style={[styles.businessName, { color: theme.textLight }]}>
+        🏢 {item.businessName}
+      </Text>
+    </TouchableOpacity>
+  );
 
-    Animated.timing(scale, { toValue: 1, duration: 300, useNativeDriver: true }).start();
-    Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true }).start();
-
-    return (
-      <Animated.View style={{ transform: [{ scale }], opacity }}>
-        <TouchableOpacity
-          style={[
-            styles.item,
-            { backgroundColor: theme.card, borderColor: theme.border },
-          ]}
-          activeOpacity={0.85}
-          onPress={() =>
-            router.push({
-              pathname: '/transactions',
-              params: { bookId: item.id, bookName: item.name },
-            })
-          }
-        >
-          <Text style={[styles.bookName, { color: theme.textDark }]}>{item.name}</Text>
-          <Text style={[styles.businessName, { color: theme.textLight }]}>
-            🏢 {item.businessName}
-          </Text>
-        </TouchableOpacity>
-      </Animated.View>
-    );
-  };
+  // ✅ Render nothing until first load completes
+  if (!isLoaded) return null;
 
   return (
     <ScreenContainer>
-      <AnimatedScreenWrapper>
-        <Text style={[styles.title, { color: theme.textDark }]}>Books</Text>
+      <Text style={[styles.title, { color: theme.textDark }]}>Books</Text>
 
-        <FlatList
-          data={books}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={{ fontSize: 50, color: theme.textLight }}>📚</Text>
-              <Text style={[styles.emptyText, { color: theme.textLight }]}>
-                No books yet. Add a new one from Settings.
-              </Text>
-            </View>
-          }
-        />
-      </AnimatedScreenWrapper>
+      <FlatList
+        data={books}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContainer}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={{ fontSize: 50, color: theme.textLight }}>📚</Text>
+            <Text style={[styles.emptyText, { color: theme.textLight }]}>
+              No books yet. Add a new one from Settings.
+            </Text>
+          </View>
+        }
+      />
     </ScreenContainer>
   );
 }

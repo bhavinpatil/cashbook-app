@@ -51,10 +51,21 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="fuel"
+        name="insights"
         options={{
-          title: "Fuel Log",
-          tabBarIcon: ({ color }) => <Ionicons name="speedometer" color={color} size={24} />,
+          title: 'Insights',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="pie-chart-outline" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="trips"
+        options={{
+          title: 'Trips Log',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="speedometer" color={color} size={24} />
+          ),
         }}
       />
       <Tabs.Screen
