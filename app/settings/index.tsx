@@ -172,6 +172,17 @@ export default function SettingsScreen() {
         <Text style={[styles.rowText, { color: theme.textDark }]}>Export / Import Data</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity
+        style={[styles.rowItem, { backgroundColor: theme.card, borderColor: theme.border }]}
+        onPress={() => router.push('/sms' as any)}
+        activeOpacity={0.7}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Ionicons name="mail-outline" size={22} color={theme.textLight} />
+          <Text style={[styles.rowText, { color: theme.textDark }]}>Smart SMS Transactions</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={theme.textLight} />
+      </TouchableOpacity>
 
       {/* Appearance (Compact Row) */}
       <TouchableOpacity

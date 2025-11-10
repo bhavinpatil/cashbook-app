@@ -60,6 +60,12 @@ function AppLayout() {
             title: 'Personal Cashbook', // ✅ Fixed title
           }}
         />
+        <Stack.Screen
+          name="sms/index"
+          options={{
+            title: 'Personal Cashbook', // ✅ Fixed title
+          }}
+        />
       </Stack>
     </View>
   );
