@@ -15,11 +15,13 @@ export interface Book {
 export interface Transaction {
   id: string;
   bookId: string;
-  type: 'credit' | 'debit';
   amount: number;
-  description: string;
-  date: string; // ISO string
+  date: string;
+  type: 'credit' | 'debit';
   category?: string;
+  description?: string;
   images?: string[];
+  investmentType?: string; // 🆕
 }
+
 

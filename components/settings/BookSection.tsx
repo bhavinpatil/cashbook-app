@@ -1,4 +1,4 @@
-// app/components/settings/BookSection.tsx
+// components/settings/BookSection.tsx
 import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import CustomButton from '@/components/CustomButton';

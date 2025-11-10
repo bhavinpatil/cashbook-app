@@ -1,5 +1,4 @@
-// app/transactions/hooks/useInsights.ts
-
+// hooks/useInsights.ts 
 import { Transaction } from '@/types/types';
 export const useInsights = (transactions: Transaction[]) => {
     // ---------- Pie Chart: Category-wise total debit ----------

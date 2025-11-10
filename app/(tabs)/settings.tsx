@@ -11,7 +11,16 @@ import { Book, Business } from '@/types/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Layout,
+} from 'react-native-reanimated';
+import ThemePickerModal from '@/components/settings/ThemePickerModal';
+import { useRouter } from 'expo-router';
 
 type SelectedItem =
   | { id: string; type: 'business' }
@@ -29,8 +38,42 @@ export default function SettingsScreen() {
   const [newBookName, setNewBookName] = useState('');
   const [selectedBusinessId, setSelectedBusinessId] = useState('');
   const { theme } = useTheme();
+  const [themePickerVisible, setThemePickerVisible] = useState(false);
+  const router = useRouter();
 
-  // Load data from AsyncStorage
+  // Dropdown states
+  const [businessOpen, setBusinessOpen] = useState(false);
+  const [bookOpen, setBookOpen] = useState(false);
+
+  // Chevron animations
+  const businessRotation = useSharedValue(0);
+  const bookRotation = useSharedValue(0);
+
+  const businessChevronStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${businessRotation.value}deg` }],
+  }));
+
+  const bookChevronStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${bookRotation.value}deg` }],
+  }));
+
+  const toggleBusiness = () => {
+    setBusinessOpen((prev) => {
+      const newState = !prev;
+      businessRotation.value = withTiming(newState ? 90 : 0, { duration: 200 });
+      return newState;
+    });
+  };
+
+  const toggleBook = () => {
+    setBookOpen((prev) => {
+      const newState = !prev;
+      bookRotation.value = withTiming(newState ? 90 : 0, { duration: 200 });
+      return newState;
+    });
+  };
+
+  // Load data
   const loadData = async (): Promise<void> => {
     try {
       const bData = await AsyncStorage.getItem('businesses');
@@ -51,11 +94,7 @@ export default function SettingsScreen() {
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      loadData();
-    }, [])
-  );
+  useFocusEffect(useCallback(() => { loadData(); }, []));
 
   const deleteBusiness = (id: string) => {
     Alert.alert('Delete Business?', 'This will remove all its books as well.', [
@@ -121,38 +160,95 @@ export default function SettingsScreen() {
 
   return (
     <ScrollableScreenContainer>
-      {/* --- Theme Selector --- */}
-      <View style={{ marginBottom: 20 }}>
-        <ThemeSelector />
+      <Text style={[styles.header, { color: theme.textDark }]}>⚙️ Settings</Text>
+
+      {/* Appearance (Compact Row) */}
+      <TouchableOpacity
+        style={[
+          styles.rowItem,
+          { backgroundColor: theme.card, borderColor: theme.border },
+        ]}
+        onPress={() => setThemePickerVisible(true)}
+        activeOpacity={0.7}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Ionicons name="color-palette-outline" size={22} color={theme.textLight} />
+          <Text style={[styles.rowText, { color: theme.textDark }]}>Appearance</Text>
+        </View>
+        <Text style={{ color: theme.textLight, fontSize: 14 }}>
+          {theme.name.charAt(0).toUpperCase() + theme.name.slice(1)}
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.rowItem, { backgroundColor: theme.card, borderColor: theme.border }]}
+        onPress={() => router.push('/investments' as any)}
+        activeOpacity={0.7}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Ionicons name="bar-chart-outline" size={22} color={theme.textLight} />
+          <Text style={[styles.rowText, { color: theme.textDark }]}>Investments</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={theme.textLight} />
+      </TouchableOpacity>
+
+      {/* Theme Picker Modal */}
+      <ThemePickerModal
+        visible={themePickerVisible}
+        onClose={() => setThemePickerVisible(false)}
+      />
+
+      {/* Businesses Section */}
+      <View style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <TouchableOpacity style={styles.sectionHeader} onPress={toggleBusiness} activeOpacity={0.7}>
+          <Ionicons name="business-outline" size={20} color={theme.textLight} />
+          <Text style={[styles.sectionTitle, { color: theme.textLight }]}>Businesses</Text>
+          <Animated.View style={[{ marginLeft: 'auto' }, businessChevronStyle]}>
+            <Ionicons name="chevron-forward" size={20} color={theme.textLight} />
+          </Animated.View>
+        </TouchableOpacity>
+
+        {businessOpen && (
+          <Animated.View layout={Layout.springify()}>
+            <BusinessSection
+              businesses={businesses}
+              onAdd={() => setAddBusinessVisible(true)}
+              onEdit={(id) => {
+                setSelectedItem({ id, type: 'business' });
+                setEditVisible(true);
+              }}
+              onDelete={deleteBusiness}
+            />
+          </Animated.View>
+        )}
       </View>
 
-      {/* --- Businesses --- */}
-      <View>
-        <BusinessSection
-          businesses={businesses}
-          onAdd={() => setAddBusinessVisible(true)}
-          onEdit={(id) => {
-            setSelectedItem({ id, type: 'business' });
-            setEditVisible(true);
-          }}
-          onDelete={deleteBusiness}
-        />
+      {/* Books Section */}
+      <View style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <TouchableOpacity style={styles.sectionHeader} onPress={toggleBook} activeOpacity={0.7}>
+          <Ionicons name="book-outline" size={20} color={theme.textLight} />
+          <Text style={[styles.sectionTitle, { color: theme.textLight }]}>Books</Text>
+          <Animated.View style={[{ marginLeft: 'auto' }, bookChevronStyle]}>
+            <Ionicons name="chevron-forward" size={20} color={theme.textLight} />
+          </Animated.View>
+        </TouchableOpacity>
+
+        {bookOpen && (
+          <Animated.View layout={Layout.springify()}>
+            <BookSection
+              books={books}
+              onAdd={() => setAddBookVisible(true)}
+              onEdit={(id) => {
+                setSelectedItem({ id, type: 'book' });
+                setEditVisible(true);
+              }}
+              onDelete={deleteBook}
+            />
+          </Animated.View>
+        )}
       </View>
 
-      {/* --- Books --- */}
-      <View>
-        <BookSection
-          books={books}
-          onAdd={() => setAddBookVisible(true)}
-          onEdit={(id) => {
-            setSelectedItem({ id, type: 'book' });
-            setEditVisible(true);
-          }}
-          onDelete={deleteBook}
-        />
-      </View>
-
-      {/* --- Add Business Modal --- */}
+      {/* Modals */}
       <AddBusinessModal
         visible={addBusinessVisible}
         onClose={() => setAddBusinessVisible(false)}
@@ -168,7 +264,6 @@ export default function SettingsScreen() {
         }}
       />
 
-      {/* --- Add Book Modal --- */}
       <AddBookModal
         visible={addBookVisible}
         onClose={() => setAddBookVisible(false)}
@@ -194,7 +289,6 @@ export default function SettingsScreen() {
         }}
       />
 
-      {/* --- Edit Modal --- */}
       <EditNameModal
         visible={editVisible}
         initialValue=""
@@ -206,4 +300,35 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  header: { fontSize: 24, fontWeight: '700', marginBottom: 16 },
+  sectionCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 8,
+  },
+  sectionTitle: { fontSize: 16, fontWeight: '600' },
+
+  // 🧩 Add these two:
+  rowItem: {
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  rowText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

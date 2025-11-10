@@ -1,18 +1,17 @@
-// hooks/useSmartReload.ts
 import { useCallback, useEffect } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { AppState, AppStateStatus } from 'react-native';
-import { eventBus } from '@/contexts/EventBus';
+import { eventBus, EventType } from '@/contexts/EventBus';
 
 /**
  * Smart reload hook that keeps data updated automatically.
  *
- * @param dataType - A string representing the data category (e.g., "transactions", "books").
+ * @param dataType - The specific data category (e.g., "transactions", "books").
  * @param reloadFn - Function to reload data from storage.
  * @param deps - Optional dependencies (e.g., [currentMonth]).
  */
 export function useSmartReload(
-    dataType: string,
+    dataType: EventType,      // ✅ Use the typed EventType instead of string
     reloadFn: () => void,
     deps: any[] = []
 ) {
@@ -27,7 +26,7 @@ export function useSmartReload(
     useEffect(() => {
         const unsubscribe = eventBus.onUpdate(dataType, reloadFn);
         return () => {
-            // ✅ Proper cleanup function
+            // ✅ Proper cleanup
             unsubscribe();
         };
     }, [reloadFn, dataType]);

@@ -1,3 +1,4 @@
+// components/settings/AddBusinessModal.tsx
 import React from 'react';
 import { View, Text, TextInput, Modal, StyleSheet } from 'react-native';
 import CustomButton from '@/components/CustomButton';
