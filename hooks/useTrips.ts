@@ -13,6 +13,7 @@ export type Trip = {
   distance?: number;
   mileage?: number;
   notes?: string;
+  images?: string[];
 };
 
 export const useTrips = () => {
