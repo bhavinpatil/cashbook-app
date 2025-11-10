@@ -1,5 +1,4 @@
-// app/insights/components/BudgetModal.tsx
-
+// components/insights/BudgetModal.tsx
 import React from 'react';
 import {
   View,

@@ -1,21 +1,20 @@
 // components/transactions/TransactionSummary.tsx
-import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 
 interface Props {
   totalCredit: number;
   totalDebit: number;
   balance: number;
-  onViewInsights: () => void;
+  bookName?: string; // ✅ added optional prop
 }
 
 export default function TransactionSummary({
   totalCredit,
   totalDebit,
   balance,
-  onViewInsights,
+  bookName,
 }: Props) {
   const { theme } = useTheme();
 
@@ -26,16 +25,32 @@ export default function TransactionSummary({
         { backgroundColor: theme.card, borderColor: theme.border },
       ]}
     >
+      {/* ✅ Book Name Header */}
+      {bookName && (
+        <Text
+          style={[
+            styles.bookName,
+            { color: theme.textDark, borderBottomColor: theme.border },
+          ]}
+        >
+          {bookName}
+        </Text>
+      )}
+
       {/* Credit / Debit Section */}
       <View style={styles.row}>
         <View>
-          <Text style={[styles.label, { color: theme.textLight }]}>Total Credit</Text>
+          <Text style={[styles.label, { color: theme.textLight }]}>
+            Total Credit
+          </Text>
           <Text style={[styles.value, { color: theme.success }]}>
             ₹{totalCredit.toFixed(2)}
           </Text>
         </View>
         <View>
-          <Text style={[styles.label, { color: theme.textLight }]}>Total Debit</Text>
+          <Text style={[styles.label, { color: theme.textLight }]}>
+            Total Debit
+          </Text>
           <Text style={[styles.value, { color: theme.danger }]}>
             ₹{totalDebit.toFixed(2)}
           </Text>
@@ -69,6 +84,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     elevation: 2,
   },
+  bookName: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 12,
+    paddingBottom: 6,
+    borderBottomWidth: 1,
+  },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -83,22 +105,5 @@ const styles = StyleSheet.create({
   balanceCard: {
     marginTop: 16,
     alignItems: 'center',
-  },
-  insightButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-    paddingVertical: 12,
-    borderRadius: 30,
-    elevation: 3,
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  insightText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 15,
   },
 });

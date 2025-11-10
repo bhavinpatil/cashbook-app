@@ -1,4 +1,3 @@
-// components/insights/SpendsChart.tsx
 import React, { useMemo, useState, useEffect } from 'react';
 import {
     View,
@@ -17,11 +16,9 @@ const screenWidth = Dimensions.get('window').width;
 export default function SpendsChart({
     transactions,
     currentMonth,
-    bookId,
 }: {
     transactions: any[];
     currentMonth: dayjs.Dayjs;
-    bookId?: string; // ✅ Optional now
 }) {
     const { loadBudget, saveBudget } = useBudget();
 
@@ -30,21 +27,18 @@ export default function SpendsChart({
     const [tempBudget, setTempBudget] = useState<string>('0');
     const [isDaily, setIsDaily] = useState(true);
 
-    // 🧠 Load budget only if bookId provided
+    // 🧠 Load global budget (only once)
     useEffect(() => {
-        if (!bookId) return;
         (async () => {
-            const saved = await loadBudget(bookId, currentMonth);
+            const saved = await loadBudget();
             if (saved) setBudget(saved);
         })();
-    }, [bookId, currentMonth]);
+    }, []);
 
-    // 💾 Save budget (if per-book mode)
+    // 💾 Save global budget
     const handleSaveBudget = async (newBudget: number) => {
         setBudget(newBudget);
-        if (bookId) {
-            await saveBudget(bookId, currentMonth, newBudget);
-        }
+        await saveBudget(newBudget);
     };
 
     // 🔢 Filter transactions for current + previous months
@@ -119,15 +113,26 @@ export default function SpendsChart({
         propsForBackgroundLines: { strokeDasharray: '4', strokeWidth: 0.5 },
     };
 
+    const percentUsed = budget > 0 ? Math.min((spendsTotal / budget) * 100, 100) : 0;
+
     return (
         <>
             {/* Budget Summary */}
             <View style={styles.comparisonContainer}>
-                <TouchableOpacity style={styles.comparisonBox} onPress={() => setShowBudgetModal(true)}>
+                <TouchableOpacity
+                    style={styles.comparisonBox}
+                    activeOpacity={0.8}
+                    onPress={() => setShowBudgetModal(true)}
+                >
                     <Text style={styles.smallText}>This month so far</Text>
                     <Text style={[styles.valueText, { color: '#e63946' }]}>
-                        ₹{spendsTotal.toFixed(0)} {bookId ? `/ ₹${budget.toLocaleString()}` : ''}
+                        ₹{spendsTotal.toFixed(0)} / ₹{budget.toLocaleString()}
                     </Text>
+                    {budget > 0 && (
+                        <Text style={[styles.percentText, { color: percentUsed > 90 ? 'red' : '#2a9d8f' }]}>
+                            {percentUsed.toFixed(1)}% used
+                        </Text>
+                    )}
                 </TouchableOpacity>
                 <View style={styles.comparisonBox}>
                     <Text style={styles.smallText}>Last month</Text>
@@ -147,7 +152,24 @@ export default function SpendsChart({
                     <LineChart
                         data={{
                             labels: visibleLabels,
-                            datasets: [{ data: visibleData, color: () => '#e63946', strokeWidth: 2 }],
+                            datasets: [
+                                {
+                                    data: visibleData,
+                                    color: () => '#e63946',
+                                    strokeWidth: 2,
+                                },
+                                // ✅ Add global budget line
+                                ...(budget > 0
+                                    ? [
+                                        {
+                                            data: Array(visibleData.length).fill(budget),
+                                            color: () => 'rgba(46, 204, 113, 0.8)', // green line
+                                            strokeWidth: 2,
+                                            withDots: false,
+                                        },
+                                    ]
+                                    : []),
+                            ],
                         }}
                         width={screenWidth - 60}
                         height={260}
@@ -170,7 +192,7 @@ export default function SpendsChart({
                         width={screenWidth - 60}
                         height={260}
                         yAxisLabel="₹"
-                        yAxisSuffix=""   // ✅ Added this line
+                        yAxisSuffix=""
                         fromZero
                         chartConfig={{
                             ...chartConfig,
@@ -180,7 +202,12 @@ export default function SpendsChart({
                         }}
                         style={{ borderRadius: 12 }}
                     />
+                )}
 
+                {budget > 0 && (
+                    <Text style={{ textAlign: 'right', marginTop: 4, color: '#2ecc71', fontSize: 12 }}>
+                        Budget limit: ₹{budget.toLocaleString()}
+                    </Text>
                 )}
 
                 {/* Toggle Buttons */}
@@ -200,23 +227,21 @@ export default function SpendsChart({
                 </View>
             </View>
 
-            {/* Budget Modal (shown only if bookId exists) */}
-            {bookId && (
-                <BudgetModal
-                    visible={showBudgetModal}
-                    budget={budget}
-                    tempBudget={tempBudget}
-                    setTempBudget={setTempBudget}
-                    onCancel={() => {
-                        setShowBudgetModal(false);
-                        setTempBudget(String(budget));
-                    }}
-                    onSave={(newBudget) => {
-                        handleSaveBudget(newBudget);
-                        setShowBudgetModal(false);
-                    }}
-                />
-            )}
+            {/* ✅ Always show Budget Modal */}
+            <BudgetModal
+                visible={showBudgetModal}
+                budget={budget}
+                tempBudget={tempBudget}
+                setTempBudget={setTempBudget}
+                onCancel={() => {
+                    setShowBudgetModal(false);
+                    setTempBudget(String(budget));
+                }}
+                onSave={(newBudget) => {
+                    handleSaveBudget(newBudget);
+                    setShowBudgetModal(false);
+                }}
+            />
         </>
     );
 }
@@ -230,6 +255,7 @@ const styles = StyleSheet.create({
     comparisonBox: { alignItems: 'flex-start' },
     smallText: { fontSize: 13, color: '#666' },
     valueText: { fontSize: 16, fontWeight: '700' },
+    percentText: { fontSize: 13, marginTop: 2 },
     graphCard: {
         backgroundColor: '#fff',
         borderRadius: 16,

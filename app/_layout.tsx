@@ -3,7 +3,7 @@ import { ThemeProvider } from '../contexts/ThemeContext';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '@/contexts/ThemeContext';
-import { View } from 'react-native';
+import { View, Text } from 'react-native';
 import 'react-native-reanimated';
 
 export default function RootLayout() {
@@ -16,6 +16,7 @@ export default function RootLayout() {
 
 function AppLayout() {
   const { theme } = useTheme();
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       <StatusBar style={theme.name === 'dark' ? 'light' : 'dark'} />
@@ -24,25 +25,27 @@ function AppLayout() {
           headerStyle: { backgroundColor: theme.card },
           headerTintColor: theme.textDark,
           contentStyle: { backgroundColor: theme.background },
+          headerTitle: () => (
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: '700',
+                color: theme.textDark,
+              }}
+            >
+              📘 Personal Cashbook
+            </Text>
+          ),
+          headerTitleAlign: 'center',
         }}
       >
-        {/* Tabs root — hide header here */}
+        {/* Tabs root — hide header */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
-        {/* Other stack screens show header normally */}
-        <Stack.Screen
-          name="transactions/index"
-          options={({ route }) => ({
-            title: (route.params as { bookName?: string })?.bookName || 'Transactions',
-          })}
-        />
-
-        <Stack.Screen
-          name="insights/index"
-          options={({ route }) => ({
-            title: (route.params as { bookName?: string })?.bookName || 'Insights',
-          })}
-        />
+        {/* These screens now use the same global title */}
+        <Stack.Screen name="transactions/index" />
+        <Stack.Screen name="insights/index" />
+        <Stack.Screen name="investments/index" />
       </Stack>
     </View>
   );

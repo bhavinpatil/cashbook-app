@@ -1,22 +1,34 @@
-// app/insights/hooks/useBudget.ts
-
+// hooks/useBudget.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import dayjs from 'dayjs';
 
 export const useBudget = () => {
-  const getBudgetKey = (bookId: string, month: dayjs.Dayjs) =>
-    `budget_${bookId}_${month.format('YYYY_MM')}`;
+  const GLOBAL_KEY = 'global_budget';
 
-  const loadBudget = async (bookId: string, month: dayjs.Dayjs): Promise<number | null> => {
-    const key = getBudgetKey(bookId, month);
-    const saved = await AsyncStorage.getItem(key);
-    return saved ? Number(saved) : null;
+  const saveBudget = async (budget: number) => {
+    try {
+      await AsyncStorage.setItem(GLOBAL_KEY, JSON.stringify(budget));
+    } catch (e) {
+      console.error('Error saving global budget:', e);
+    }
   };
 
-  const saveBudget = async (bookId: string, month: dayjs.Dayjs, value: number) => {
-    const key = getBudgetKey(bookId, month);
-    await AsyncStorage.setItem(key, String(value));
+  const loadBudget = async (): Promise<number> => {
+    try {
+      const val = await AsyncStorage.getItem(GLOBAL_KEY);
+      return val ? JSON.parse(val) : 0;
+    } catch (e) {
+      console.error('Error loading global budget:', e);
+      return 0;
+    }
   };
 
-  return { loadBudget, saveBudget };
+  const clearBudget = async () => {
+    try {
+      await AsyncStorage.removeItem(GLOBAL_KEY);
+    } catch (e) {
+      console.error('Error clearing global budget:', e);
+    }
+  };
+
+  return { saveBudget, loadBudget, clearBudget };
 };

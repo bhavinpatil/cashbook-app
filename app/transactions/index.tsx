@@ -20,6 +20,9 @@ export default function TransactionsScreen() {
   const router = useRouter();
   const { theme } = useTheme();
 
+  const normalizedBookName = Array.isArray(bookName) ? bookName[0] : bookName;
+  const normalizedBookId = Array.isArray(bookId) ? bookId[0] : bookId;
+
   const {
     transactions,
     addTransaction,
@@ -27,7 +30,7 @@ export default function TransactionsScreen() {
     updateTransaction,
     loading,
     categories,
-  } = useTransactions(bookId as string);
+  } = useTransactions(normalizedBookId as string);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [exportModalVisible, setExportModalVisible] = useState(false);
@@ -96,12 +99,7 @@ export default function TransactionsScreen() {
         balance={balance}
         totalCredit={totalCredit}
         totalDebit={totalDebit}
-        onViewInsights={() =>
-          router.push({
-            pathname: '/insights',
-            params: { bookId, bookName },
-          })
-        }
+        bookName={normalizedBookName}
       />
 
       <TransactionList
