@@ -20,6 +20,10 @@ import { mockSmsMessages } from '@/utils/mockSmsData';
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import { readSmsInbox } from '@/utils/smsReader';
+import { requestReadSmsPermission } from '@/utils/androidPermissions';
+
+
 export default function SmsTransactionsScreen() {
   const { theme } = useTheme();
   const [currentMonth, setCurrentMonth] = useState(getMonthKey());
@@ -132,6 +136,37 @@ export default function SmsTransactionsScreen() {
           </TouchableOpacity>
         </View>
       )}
+
+      {__DEV__ && (
+        <TouchableOpacity
+          style={[styles.importButton, { backgroundColor: theme.success }]}
+          onPress={async () => {
+            const ok = await requestReadSmsPermission();
+            if (!ok) {
+              alert('Permission denied');
+              return;
+            }
+
+            readSmsInbox(async (parsedMessages) => {
+              let added = 0;
+              for (const tx of parsedMessages) {
+                if (!tx) continue;
+                const monthKey = getMonthKey(new Date(tx.date));
+                await addTransaction(tx, monthKey);
+                added++;
+              }
+              alert(`✅ Imported ${added} messages from device inbox`);
+            }, (err) => {
+              console.error('Failed to read SMS:', err);
+              alert('❌ Failed to read SMS');
+            });
+          }}
+        >
+          <Ionicons name="mail-outline" size={20} color="#fff" />
+          <Text style={styles.importButtonText}>Import From Device SMS</Text>
+        </TouchableOpacity>
+      )}
+
 
 
       <SmsFilterPanel onApply={setFilters} />

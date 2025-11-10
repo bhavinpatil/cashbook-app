@@ -4,6 +4,10 @@ import { useEffect, useState } from 'react';
 import { SmsTransaction } from '@/types/sms';
 import { getMonthKey, autoDetectCategory } from '@/utils/smsUtils';
 
+import { requestReadSmsPermission } from '@/utils/androidPermissions';
+import { readSmsInbox } from '@/utils/smsReader';
+
+
 export const useSmsTransactions = (monthKey?: string) => {
   const [transactions, setTransactions] = useState<SmsTransaction[]>([]);
   const [loading, setLoading] = useState(true);
