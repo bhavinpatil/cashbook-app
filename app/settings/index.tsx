@@ -21,6 +21,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import ThemePickerModal from '@/components/settings/ThemePickerModal';
 import { useRouter } from 'expo-router';
+import { exportAllData, importAllData } from '@/utils/dataBackup';
 
 type SelectedItem =
   | { id: string; type: 'business' }
@@ -39,6 +40,7 @@ export default function SettingsScreen() {
   const [selectedBusinessId, setSelectedBusinessId] = useState('');
   const { theme } = useTheme();
   const [themePickerVisible, setThemePickerVisible] = useState(false);
+  const [exportModalVisible, setExportModalVisible] = useState(false);
   const router = useRouter();
 
   // Dropdown states
@@ -161,6 +163,15 @@ export default function SettingsScreen() {
   return (
     <ScrollableScreenContainer>
       <Text style={[styles.header, { color: theme.textDark }]}>⚙️ Settings</Text>
+
+      <TouchableOpacity
+        style={[styles.rowItem, { backgroundColor: theme.card, borderColor: theme.border }]}
+        onPress={() => setExportModalVisible(true)}
+      >
+        <Ionicons name="cloud-upload-outline" size={22} color={theme.textLight} />
+        <Text style={[styles.rowText, { color: theme.textDark }]}>Export / Import Data</Text>
+      </TouchableOpacity>
+
 
       {/* Appearance (Compact Row) */}
       <TouchableOpacity
@@ -296,6 +307,46 @@ export default function SettingsScreen() {
         onSave={handleEditSave}
         onClose={() => setEditVisible(false)}
       />
+      {/* Export / Import Modal */}
+      {exportModalVisible && (
+        <View style={StyleSheet.absoluteFillObject}>
+          <View style={styles.modalBackdrop}>
+            <View style={[styles.modalCard, { backgroundColor: theme.card }]}>
+              <Text style={[styles.modalTitle, { color: theme.textDark }]}>
+                Export / Import Data
+              </Text>
+
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: theme.primary }]}
+                onPress={async () => {
+                  setExportModalVisible(false);
+                  await exportAllData();
+                }}
+              >
+                <Text style={styles.modalButtonText}>📤 Export All Data</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: theme.success }]}
+                onPress={async () => {
+                  setExportModalVisible(false);
+                  await importAllData();
+                }}
+              >
+                <Text style={styles.modalButtonText}>📥 Import Data</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setExportModalVisible(false)}
+                style={[styles.modalButton, { backgroundColor: theme.danger }]}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+
     </ScrollableScreenContainer>
   );
 }
@@ -331,4 +382,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCard: {
+    width: '80%',
+    padding: 20,
+    borderRadius: 16,
+    elevation: 5,
+    alignItems: 'stretch',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modalButton: {
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+
 });
