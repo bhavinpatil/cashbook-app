@@ -1,4 +1,4 @@
-// app/(tabs)/fuel.tsx
+// app/trips/index.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
 import React, { useState } from 'react';
@@ -6,7 +6,6 @@ import {
   Alert,
   SafeAreaView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -18,6 +17,7 @@ import TripSummary from '@/components/trips/TripSummary';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Trip, useTrips } from '@/hooks/useTrips';
 import ScreenTitle from '@/components/ui/ScreenTitle';
+import CustomButton from '@/components/CustomButton';
 
 export default function TripScreen() {
   const { theme } = useTheme();
@@ -37,61 +37,67 @@ export default function TripScreen() {
       }
       setModalVisible(false);
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to save trip entry.');
+      Alert.alert('Error', err?.message || 'Failed to save trip entry.');
     }
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <Stack.Screen options={{ title: 'Trips Log' }} />
-
-      {/* Header */}
       <View style={styles.headerRow}>
-        <ScreenTitle>Trips Log</ScreenTitle>
-        <View style={{ flexDirection: 'row' }}>
-          {/* Insights Button */}
+        <ScreenTitle>Trips</ScreenTitle>
+
+        <View style={styles.headerButtons}>
+          {/* Chart/List Toggle */}
           <TouchableOpacity
-            style={[styles.iconButton]}
+            style={[styles.roundBtn, { borderColor: theme.border }]}
             onPress={() => setShowChart(!showChart)}
           >
-            <Ionicons name={showChart ? 'list-outline' : 'stats-chart-outline'} size={22} color={theme.textDark} />
+            <Ionicons
+              name={showChart ? "list-outline" : "stats-chart-outline"}
+              size={20}
+              color={theme.textDark}
+            />
           </TouchableOpacity>
 
-          {/* Add Trip Button */}
+          {/* Add Trip */}
           <TouchableOpacity
-            style={[styles.addButton, { backgroundColor: theme.tabActive }]}
+            style={[styles.addBtn, { backgroundColor: theme.primary }]}
             onPress={() => {
               setEditingTrip(null);
               setModalVisible(true);
             }}
           >
-            <Ionicons name="add" size={22} color="#fff" />
+            <Ionicons name="add" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
 
+
       {/* Summary */}
+      <View style={{ paddingHorizontal: 12 }}>
+        <TripSummary trips={trips} />
+      </View>
 
-      {!showChart && <TripSummary trips={trips} />}
+      {/* Conditional view */}
+      <View style={{ flex: 1 }}>
+        {showChart ? (
+          <TripChart trips={trips} />
+        ) : (
+          <TripList
+            trips={trips}
+            onEdit={(trip) => {
+              setEditingTrip(trip);
+              setModalVisible(true);
+            }}
+            onDelete={async (id) => {
+              await removeTrip(id);
+            }}
+          />
+        )}
+      </View>
 
-      {/* Conditional View */}
-      {showChart ? (
-        <TripChart trips={trips} />
-      ) : (
-        <TripList
-          trips={trips}
-          onEdit={(trip) => {
-            setEditingTrip(trip);
-            setModalVisible(true);
-          }}
-          onDelete={async (id) => {
-            await removeTrip(id);
-          }}
-        />
-      )}
-
-
-      {/* Add/Edit Trip Modal */}
+      {/* Add / Edit Modal (central) */}
       <AddTripModal
         visible={modalVisible}
         onClose={() => {
@@ -115,13 +121,26 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 6,
   },
-  headerText: { fontSize: 20, fontWeight: '600' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   iconButton: {
     padding: 8,
     marginRight: 8,
   },
-  addButton: {
+  headerButtons: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 10,
+  },
+
+  roundBtn: {
     padding: 8,
-    borderRadius: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+
+  addBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
   },
 });

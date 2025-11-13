@@ -1,7 +1,9 @@
+// components/trips/TripChart.tsx
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Dimensions, ScrollView } from 'react-native';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { Trip } from '@/hooks/useTrips';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const screenWidth = Dimensions.get('window').width - 24;
 
@@ -10,6 +12,8 @@ type Props = {
 };
 
 export default function TripChart({ trips }: Props) {
+    const { theme } = useTheme();
+
     const chartData = useMemo(() => {
         const sorted = [...trips].sort(
             (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
@@ -26,17 +30,38 @@ export default function TripChart({ trips }: Props) {
     if (trips.length === 0) {
         return (
             <View style={styles.empty}>
-                <Text style={{ color: '#777' }}>No trips yet — add some to see insights!</Text>
+                <Text style={{ color: theme.textLight }}>No trips yet — add some to see insights!</Text>
             </View>
         );
     }
 
+    const chartConfig = {
+        backgroundColor: theme.card,
+        backgroundGradientFrom: theme.card,
+        backgroundGradientTo: theme.card,
+        decimalPlaces: 1,
+        color: (opacity = 1) => theme.primary,
+        labelColor: (opacity = 1) =>
+            theme.name === "dark"
+                ? `rgba(255,255,255,${opacity})`
+                : theme.textLight,
+        propsForDots: {
+            r: "4",
+            strokeWidth: "2",
+            stroke: theme.primary,
+        },
+        propsForBackgroundLines: {
+            stroke: theme.border,
+            strokeDasharray: "4",
+        },
+    };
+
+
     return (
         <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 50 }}>
-            <Text style={styles.header}>Trip Insights</Text>
+            <Text style={[styles.header, { color: theme.textDark }]}>Trip Insights</Text>
 
-            {/* Mileage Trend */}
-            <Text style={styles.title}>Mileage Trend (km/L)</Text>
+            <Text style={[styles.title, { color: theme.textDark }]}>Mileage Trend (km/L)</Text>
             <LineChart
                 data={{
                     labels: chartData.labels,
@@ -44,22 +69,18 @@ export default function TripChart({ trips }: Props) {
                 }}
                 width={screenWidth}
                 height={240}
-                yAxisSuffix=" km/L"
+                yAxisSuffix=""
                 yAxisLabel=""
                 fromZero
-                chartConfig={{
-                    ...chartConfig,
-                    propsForLabels: {
-                        fontSize: 11,
-                    },
-                }}
+                chartConfig={chartConfig}
                 bezier
-                style={styles.chart}
+                style={{
+                    ...styles.chart,
+                    backgroundColor: theme.card,
+                }}
             />
 
-
-            {/* Distance Per Trip */}
-            <Text style={styles.title}>Distance Per Trip (km)</Text>
+            <Text style={[styles.title, { color: theme.textDark }]}>Distance Per Trip (km)</Text>
             <BarChart
                 data={{
                     labels: chartData.labels,
@@ -68,14 +89,16 @@ export default function TripChart({ trips }: Props) {
                 width={screenWidth}
                 height={220}
                 yAxisLabel=""
-                yAxisSuffix=" km"
+                yAxisSuffix=""
                 fromZero
                 chartConfig={chartConfig}
-                style={styles.chart}
+                style={{
+                    ...styles.chart,
+                    backgroundColor: theme.card,
+                }}
             />
 
-            {/* Cost Per Trip */}
-            <Text style={styles.title}>Cost Per Trip (₹)</Text>
+            <Text style={[styles.title, { color: theme.textDark }]}>Cost Per Trip (₹)</Text>
             <BarChart
                 data={{
                     labels: chartData.labels,
@@ -87,26 +110,14 @@ export default function TripChart({ trips }: Props) {
                 yAxisLabel=""
                 yAxisSuffix="₹"
                 chartConfig={chartConfig}
-                style={styles.chart}
+                style={{
+                    ...styles.chart,
+                    backgroundColor: theme.card,
+                }}
             />
         </ScrollView>
     );
 }
-
-const chartConfig = {
-    backgroundColor: '#fff',
-    backgroundGradientFrom: '#f9f9f9',
-    backgroundGradientTo: '#f9f9f9',
-    decimalPlaces: 1,
-    color: (opacity = 1) => `rgba(47, 149, 220, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(100, 100, 100, ${opacity})`,
-    style: { borderRadius: 12 },
-    propsForDots: {
-        r: '4',
-        strokeWidth: '2',
-        stroke: '#2f95dc',
-    },
-};
 
 const styles = StyleSheet.create({
     container: {
@@ -124,11 +135,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         marginTop: 16,
-        marginBottom: 4,
+        marginBottom: 8,
     },
     chart: {
         borderRadius: 12,
-        marginLeft: 10,   // ✅ add directly here
+        marginLeft: 6,
+        marginBottom: 6,
     },
     empty: {
         padding: 20,

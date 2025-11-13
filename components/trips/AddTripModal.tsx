@@ -16,6 +16,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { Trip } from '@/hooks/useTrips';
+import { useTheme } from '@/contexts/ThemeContext';
+import CustomButton from '@/components/CustomButton';
 
 type TripInput = Omit<Trip, 'id' | 'distance' | 'mileage'> & { images?: string[] };
 
@@ -27,6 +29,8 @@ type Props = {
 };
 
 export default function AddTripModal({ visible, onClose, onSave, initial }: Props) {
+  const { theme } = useTheme();
+
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -80,7 +84,7 @@ export default function AddTripModal({ visible, onClose, onSave, initial }: Prop
     });
 
     if (!result.canceled && result.assets.length > 0) {
-      setImages(prev => [...prev, result.assets[0].uri]);
+      setImages((prev) => [...prev, result.assets[0].uri]);
     }
   };
 
@@ -103,12 +107,12 @@ export default function AddTripModal({ visible, onClose, onSave, initial }: Prop
     });
 
     if (!result.canceled && result.assets.length > 0) {
-      setImages(prev => [...prev, result.assets[0].uri]);
+      setImages((prev) => [...prev, result.assets[0].uri]);
     }
   };
 
   const removeImage = (uri: string) => {
-    setImages(prev => prev.filter(img => img !== uri));
+    setImages((prev) => prev.filter((img) => img !== uri));
   };
 
   const handleSave = () => {
@@ -148,20 +152,19 @@ export default function AddTripModal({ visible, onClose, onSave, initial }: Prop
 
   return (
     <Modal visible={visible} animationType="fade" transparent>
-      <View style={styles.backdrop}>
-        <View style={styles.sheet}>
+      <View style={[styles.backdrop, { backgroundColor: 'rgba(0,0,0,0.45)' }]}>
+        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <View style={styles.sheetHeader}>
-            <Text style={styles.title}>{initial ? 'Edit Trip' : 'Add Trip'}</Text>
+            <Text style={[styles.title, { color: theme.textDark }]}>{initial ? 'Edit Trip' : 'Add Trip'}</Text>
             <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={22} />
+              <Ionicons name="close" size={22} color={theme.textLight} />
             </TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {/* Date Fields */}
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
             <TouchableOpacity style={styles.dateRow} onPress={() => setShowDatePicker(true)}>
-              <Text style={styles.label}>Start Date</Text>
-              <Text style={styles.value}>{startDate.toDateString()}</Text>
+              <Text style={[styles.label, { color: theme.textLight }]}>Start Date</Text>
+              <Text style={[styles.value, { color: theme.textDark }]}>{startDate.toDateString()}</Text>
             </TouchableOpacity>
             {showDatePicker && (
               <DateTimePicker
@@ -175,8 +178,8 @@ export default function AddTripModal({ visible, onClose, onSave, initial }: Prop
             )}
 
             <TouchableOpacity style={styles.dateRow} onPress={() => setShowEndDatePicker(true)}>
-              <Text style={styles.label}>End Date (optional)</Text>
-              <Text style={styles.value}>{endDate ? endDate.toDateString() : '—'}</Text>
+              <Text style={[styles.label, { color: theme.textLight }]}>End Date (optional)</Text>
+              <Text style={[styles.value, { color: theme.textDark }]}>{endDate ? endDate.toDateString() : '—'}</Text>
             </TouchableOpacity>
             {showEndDatePicker && (
               <DateTimePicker
@@ -189,87 +192,87 @@ export default function AddTripModal({ visible, onClose, onSave, initial }: Prop
               />
             )}
 
-            {/* Odometer Fields */}
+            {/* Fields */}
             <View style={styles.inputRow}>
-              <Text style={styles.label}>Start Odometer (km)</Text>
+              <Text style={[styles.label, { color: theme.textLight }]}>Start Odometer (km)</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { borderColor: theme.border, backgroundColor: theme.background, color: theme.textDark }]}
                 keyboardType="numeric"
                 value={startOdo}
                 onChangeText={setStartOdo}
                 placeholder="e.g. 10000"
+                placeholderTextColor={theme.textLight}
               />
             </View>
 
             <View style={styles.inputRow}>
-              <Text style={styles.label}>End Odometer (km, optional)</Text>
+              <Text style={[styles.label, { color: theme.textLight }]}>End Odometer (km, optional)</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { borderColor: theme.border, backgroundColor: theme.background, color: theme.textDark }]}
                 keyboardType="numeric"
                 value={endOdo}
                 onChangeText={setEndOdo}
                 placeholder="e.g. 10250"
+                placeholderTextColor={theme.textLight}
               />
             </View>
 
-            {/* Fuel & Cost */}
             <View style={styles.inputRow}>
-              <Text style={styles.label}>Fuel Added (L)</Text>
+              <Text style={[styles.label, { color: theme.textLight }]}>Fuel Added (L)</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { borderColor: theme.border, backgroundColor: theme.background, color: theme.textDark }]}
                 keyboardType="numeric"
                 value={fuelAdded}
                 onChangeText={setFuelAdded}
                 placeholder="e.g. 5.3"
+                placeholderTextColor={theme.textLight}
               />
             </View>
 
             <View style={styles.inputRow}>
-              <Text style={styles.label}>Cost (₹)</Text>
+              <Text style={[styles.label, { color: theme.textLight }]}>Cost (₹)</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { borderColor: theme.border, backgroundColor: theme.background, color: theme.textDark }]}
                 keyboardType="numeric"
                 value={cost}
                 onChangeText={setCost}
                 placeholder="e.g. 560"
+                placeholderTextColor={theme.textLight}
               />
             </View>
 
-            {/* Notes */}
             <View style={styles.inputRow}>
-              <Text style={styles.label}>Notes</Text>
+              <Text style={[styles.label, { color: theme.textLight }]}>Notes</Text>
               <TextInput
-                style={[styles.input, { height: 70, textAlignVertical: 'top' }]}
+                style={[styles.input, { height: 90, textAlignVertical: 'top', borderColor: theme.border, backgroundColor: theme.background, color: theme.textDark }]}
                 multiline
-                numberOfLines={3}
+                numberOfLines={4}
                 value={notes}
                 onChangeText={setNotes}
                 placeholder="Optional trip details..."
+                placeholderTextColor={theme.textLight}
               />
             </View>
 
-            {/* 📸 Images */}
-            <View style={{ marginTop: 14 }}>
-              <Text style={styles.label}>Trip Images (max 4)</Text>
+            {/* Images */}
+            <View style={{ marginTop: 12 }}>
+              <Text style={[styles.label, { color: theme.textLight }]}>Trip Images (max 4)</Text>
               <View style={styles.imageRow}>
                 {images.map((uri) => (
                   <View key={uri} style={styles.imageContainer}>
                     <Image source={{ uri }} style={styles.imageThumb} />
-                    <TouchableOpacity
-                      style={styles.removeImageBtn}
-                      onPress={() => removeImage(uri)}
-                    >
+                    <TouchableOpacity style={styles.removeImageBtn} onPress={() => removeImage(uri)}>
                       <Ionicons name="close-circle" size={18} color="#fff" />
                     </TouchableOpacity>
                   </View>
                 ))}
                 {images.length < 4 && (
                   <>
-                    <TouchableOpacity style={styles.addImageBtn} onPress={handleAddImage}>
-                      <Ionicons name="camera" size={24} color="#2f95dc" />
+                    <TouchableOpacity style={[styles.addImageBtn, { borderColor: theme.border }]} onPress={handleAddImage}>
+                      <Ionicons name="camera" size={20} color={theme.primary} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.addImageBtn} onPress={handlePickFromGallery}>
-                      <Ionicons name="image" size={24} color="#2f95dc" />
+                    <TouchableOpacity style={[styles.addImageBtn, { borderColor: theme.border }]} onPress={handlePickFromGallery}>
+                      <Ionicons name="image" size={20} color={theme.primary} />
                     </TouchableOpacity>
                   </>
                 )}
@@ -279,12 +282,8 @@ export default function AddTripModal({ visible, onClose, onSave, initial }: Prop
 
           {/* Actions */}
           <View style={styles.actions}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-              <Text style={{ color: '#333' }}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-              <Text style={{ color: '#fff' }}>Save</Text>
-            </TouchableOpacity>
+            <CustomButton title="Cancel" type="secondary" onPress={onClose} style={{ flex: 1, marginRight: 8 }} />
+            <CustomButton title="Save" onPress={handleSave} style={{ flex: 1 }} />
           </View>
         </View>
       </View>
@@ -295,39 +294,33 @@ export default function AddTripModal({ visible, onClose, onSave, initial }: Prop
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
-  sheet: {
-    backgroundColor: '#fff',
-    padding: 18,
-    borderRadius: 16,
-    width: '95%',
-    maxHeight: '85%',
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
+  card: {
+    width: '96%',
+    maxHeight: '88%',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    elevation: 12,
   },
 
-  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   title: { fontSize: 18, fontWeight: '600' },
-  dateRow: { marginTop: 12, flexDirection: 'row', justifyContent: 'space-between' },
-  label: { fontSize: 14, color: '#666' },
+  dateRow: { marginTop: 8, flexDirection: 'row', justifyContent: 'space-between' },
+  label: { fontSize: 13 },
   value: { fontSize: 14 },
   inputRow: { marginTop: 10 },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 10,
     borderRadius: 8,
+    padding: 10,
     marginTop: 6,
+    fontSize: 16,
   },
-  actions: { marginTop: 16, flexDirection: 'row', justifyContent: 'flex-end' },
-  cancelBtn: { padding: 10, marginRight: 8 },
-  saveBtn: { padding: 10, backgroundColor: '#2f95dc', borderRadius: 8 },
+  actions: { marginTop: 12, flexDirection: 'row', justifyContent: 'space-between' },
   imageRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   imageContainer: { position: 'relative' },
   imageThumb: { width: 70, height: 70, borderRadius: 8 },
@@ -336,15 +329,16 @@ const styles = StyleSheet.create({
     top: -6,
     right: -6,
     backgroundColor: 'rgba(0,0,0,0.6)',
-    borderRadius: 10,
+    borderRadius: 12,
+    padding: 2,
   },
   addImageBtn: {
     width: 70,
     height: 70,
     borderWidth: 1,
-    borderColor: '#bbb',
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 8,
   },
 });
