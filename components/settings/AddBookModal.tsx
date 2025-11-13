@@ -1,12 +1,14 @@
 // components/settings/AddBookModal.tsx
 import { Picker } from '@react-native-picker/picker';
 import React from 'react';
-import { Modal, StyleSheet, Text, TextInput, View } from 'react-native';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
+import BaseModal from '@/components/ui/BaseModal';
 import CustomButton from '@/components/CustomButton';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Business } from '@/types/types';
+import { SPACING, RADIUS } from '@/constants/design';
 
-interface AddBookModalProps {
+interface Props {
   visible: boolean;
   onClose: () => void;
   onSave: (name: string, businessId: string) => void;
@@ -17,85 +19,40 @@ interface AddBookModalProps {
   businesses: Business[];
 }
 
-export default function AddBookModal({
-  visible,
-  onClose,
-  onSave,
-  value,
-  setValue,
-  selectedBusiness,
-  setSelectedBusiness,
-  businesses,
-}: AddBookModalProps) {
+export default function AddBookModal({ visible, onClose, onSave, value, setValue, selectedBusiness, setSelectedBusiness, businesses }: Props) {
   const { theme } = useTheme();
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.overlay}>
-        <View style={[styles.card, { backgroundColor: theme.card }]}>
-          <Text style={[styles.title, { color: theme.textDark }]}>Add New Book</Text>
-
-          <TextInput
-            style={[
-              styles.input,
-              { borderColor: theme.border, color: theme.textDark, backgroundColor: theme.background },
-            ]}
-            placeholder="Book Name"
-            placeholderTextColor={theme.textLight}
-            value={value}
-            onChangeText={setValue}
-          />
-
-          <Text style={{ marginBottom: 6, color: theme.textLight }}>Select Business:</Text>
-          <Picker
-            selectedValue={selectedBusiness}
-            style={[styles.input, { backgroundColor: theme.background, color: theme.textDark }]}
-            onValueChange={setSelectedBusiness}
-          >
-            <Picker.Item label="Select Business" value="" />
-            {businesses.map((b) => (
-              <Picker.Item key={b.id} label={b.name} value={b.id} />
-            ))}
-          </Picker>
-
-          <View style={styles.actions}>
-            <CustomButton title="Cancel" type="secondary" onPress={onClose} style={{ flex: 1 }} />
-            <CustomButton
-              title="Save"
-              onPress={() => onSave(value, selectedBusiness)}
-              style={{ flex: 1 }}
-            />
-          </View>
-        </View>
+    <BaseModal visible={visible} title="Add New Book" onClose={onClose}>
+      <View style={styles.row}>
+        <Text style={[styles.label, { color: theme.textLight }]}>Book name</Text>
+        <TextInput
+          value={value}
+          onChangeText={setValue}
+          placeholder="e.g. Personal Wallet"
+          placeholderTextColor={theme.textLight}
+          style={[styles.input, { backgroundColor: theme.background, color: theme.textDark, borderColor: theme.border }]}
+        />
       </View>
-    </Modal>
+
+      <View style={styles.row}>
+        <Text style={[styles.label, { color: theme.textLight }]}>Select Business</Text>
+        <Picker selectedValue={selectedBusiness} onValueChange={setSelectedBusiness} style={[styles.input, { backgroundColor: theme.background, color: theme.textDark }]}>
+          <Picker.Item label="Select Business" value="" />
+          {businesses.map((b) => <Picker.Item key={b.id} label={b.name} value={b.id} />)}
+        </Picker>
+      </View>
+
+      <View style={{ flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.md }}>
+        <CustomButton title="Cancel" type="secondary" onPress={onClose} style={{ flex: 1 }} />
+        <CustomButton title="Save" onPress={() => onSave(value, selectedBusiness)} style={{ flex: 1 }} />
+      </View>
+    </BaseModal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  card: {
-    width: '90%',
-    borderRadius: 12,
-    padding: 20,
-    elevation: 10,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 10,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
-    marginVertical: 10,
-    fontSize: 16,
-  },
-  actions: { flexDirection: 'row', gap: 10, marginTop: 10 },
+  row: { marginBottom: SPACING.md },
+  label: { fontSize: 14, marginBottom: 6 },
+  input: { borderWidth: 1, borderRadius: RADIUS.sm, padding: SPACING.sm },
 });
