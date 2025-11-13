@@ -1,62 +1,158 @@
 // app/investments/index.tsx
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useEffect, useState } from 'react';
-import { ScrollView, Text, View, StyleSheet } from 'react-native';
-import { Transaction } from '@/types/types';
-import InvestmentItem from '@/components/investments/InvestmentItem';
-import InvestmentChart from '@/components/insights/InvestmentChart'; // ✅ Import new chart component
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import dayjs from 'dayjs';
+import ScreenTitle from '@/components/ui/ScreenTitle';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useInvestmentsStore, Investment } from '@/hooks/useInvestmentsStore';
+
+import InvestmentSummaryTabs from '@/components/investments/InvestmentSummaryTabs';
+import InvestmentMonthHeader from '@/components/investments/InvestmentMonthHeader';
+import InvestmentPieCharts from '@/components/investments/InvestmentPieCharts';
+import InvestmentGraph from '@/components/investments/InvestmentGraph';
+import InvestmentList from '@/components/investments/InvestmentList';
+import AddInvestmentModal from '@/components/investments/AddInvestmentModal';
 
 export default function InvestmentsScreen() {
   const { theme } = useTheme();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [reload, setReload] = useState(false);
+  const store = useInvestmentsStore();
 
-  const loadTransactions = async () => {
-    const booksData = await AsyncStorage.getItem('books');
-    const books = booksData ? JSON.parse(booksData) : [];
-    let all: Transaction[] = [];
-    for (const b of books) {
-      const data = await AsyncStorage.getItem(`transactions_${b.id}`);
-      if (data) all = [...all, ...JSON.parse(data)];
-    }
-    const filtered = all.filter(tx => tx.category?.toLowerCase() === 'investment');
-    setTransactions(filtered);
-  };
+  const [all, setAll] = useState<Investment[]>([]);
+  const [currentMonth, setCurrentMonth] = useState(dayjs());
+  const [totals, setTotals] = useState<Record<string, number>>({});
+  const [activeType, setActiveType] = useState<'All' | any>('All');
+  const [addOpen, setAddOpen] = useState(false);
+  const [editing, setEditing] = useState<Investment | null>(null);
+  const [trend, setTrend] = useState<{ labels: string[]; values: number[] }>({ labels: [], values: [] });
+
+  // Load all data
+  const load = useCallback(async () => {
+    const list = await store.loadAll();
+    setAll(list);
+
+    const t = await store.getTotalsByType();
+    setTotals(t);
+
+    const tr = await store.getMonthlyTrend(6);
+    setTrend(tr);
+  }, []);
 
   useEffect(() => {
-    loadTransactions();
-  }, [reload]);
+    load();
+  }, []);
+
+  // Filters
+  const monthItems = all.filter((i) => dayjs(i.date).isSame(currentMonth, 'month'));
+  const filteredMonthItems = activeType === 'All'
+    ? monthItems
+    : monthItems.filter((i) => i.type === activeType);
+
+  const overallFiltered = activeType === 'All'
+    ? all
+    : all.filter((i) => i.type === activeType);
+
+  // Add/Update/Delete handlers
+  const handleAdd = async (payload: any) => {
+    await store.add(payload);
+    setAddOpen(false);
+    load();
+  };
+
+  const handleUpdate = async (payload: any) => {
+    await store.update(payload.id, payload);
+    setEditing(null);
+    load();
+  };
+
+  const handleDelete = async (id: string) => {
+    await store.remove(id);
+    load();
+  };
+
+  // ===== FlatList Header =====
+  const Header = () => (
+    <View>
+      {/* Title + Add Button */}
+      <View style={styles.headerRow}>
+        <ScreenTitle>Investments</ScreenTitle>
+
+        <TouchableOpacity
+          onPress={() => { setEditing(null); setAddOpen(true); }}
+          style={[styles.addBtn, { backgroundColor: theme.primary }]}
+        >
+          <Text style={{ color: '#fff', fontWeight: '700' }}>+ Add</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Summary Tabs */}
+      <InvestmentSummaryTabs
+        totals={totals}
+        active={activeType}
+        onSelectType={(t) => setActiveType(t)}
+      />
+
+      {/* Month Selector */}
+      <InvestmentMonthHeader
+        currentMonth={currentMonth}
+        setCurrentMonth={setCurrentMonth}
+      />
+
+      {/* Pie Charts */}
+      <InvestmentPieCharts
+        all={overallFiltered}
+        month={filteredMonthItems}
+      />
+
+      {/* Graph Section */}
+      <InvestmentGraph
+        all={overallFiltered}
+        month={filteredMonthItems}
+        monthlyTrend={trend}
+      />
+
+      {/* List section title */}
+      <Text style={[styles.sectionTitle, { color: theme.textDark }]}>
+        Transactions — {currentMonth.format('MMMM YYYY')}
+      </Text>
+    </View>
+  );
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: theme.background }]}
-      contentContainerStyle={{ paddingBottom: 80 }}
-    >
-      <Text style={[styles.header, { color: theme.textDark }]}>💹 Investments</Text>
+    <>
+      <FlatList
+        data={filteredMonthItems.sort(
+          (a, b) => +new Date(b.date) - +new Date(a.date)
+        )}
+        keyExtractor={(i) => i.id}
+        ListHeaderComponent={Header}
+        renderItem={({ item }) => (
+          <InvestmentList
+            items={[item]}
+            onEdit={(i) => { setEditing(i); setAddOpen(true); }}
+            onDelete={handleDelete}
+          />
+        )}
+        contentContainerStyle={{ paddingBottom: 120 }}
+        style={[styles.container, { backgroundColor: theme.background }]}
+      />
 
-      {/* List of Investment Transactions */}
-      {transactions.length ? (
-        <View style={styles.listContainer}>
-          {transactions.map(tx => (
-            <InvestmentItem key={tx.id} item={tx} onUpdated={() => setReload(!reload)} />
-          ))}
-        </View>
-      ) : (
-        <View style={styles.centered}>
-          <Text style={{ color: theme.textLight }}>No investment transactions found.</Text>
-        </View>
-      )}
-
-      {/* 📊 Improved Chart Section */}
-      {transactions.length > 0 && <InvestmentChart transactions={transactions} />}
-    </ScrollView>
+      {/* Add/Edit Modal */}
+      <AddInvestmentModal
+        visible={addOpen}
+        initial={editing}
+        onClose={() => { setAddOpen(false); setEditing(null); }}
+        onSave={(p) => {
+          if (editing) handleUpdate(p);
+          else handleAdd(p);
+        }}
+      />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  header: { fontSize: 22, fontWeight: '700', marginBottom: 10 },
-  listContainer: { marginBottom: 20 },
-  centered: { alignItems: 'center', justifyContent: 'center', marginTop: 40 },
+  addBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', marginTop: 10, marginBottom: 8 },
 });
