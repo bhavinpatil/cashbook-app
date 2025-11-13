@@ -5,15 +5,19 @@ export const getMonthKey = (date = new Date()): string => {
   return `${date.getFullYear()}_${String(date.getMonth() + 1).padStart(2, '0')}`;
 };
 
+export const isSameDay = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate();
+
 export const parseSmsMessage = (
   msg: string,
   sender: string,
   date: string
 ): SmsTransaction | null => {
-  // Normalize text
-  const text = msg.replace(/\s+/g, ' ').trim().toLowerCase();
+  const text = msg.replace(/\s+/g, ' ').trim();
 
-  // 💰 Extract amount: supports Rs2000, Rs.2000, Rs 2,000.00, INR 2000, ₹2000 etc.
+  // Extract amount token (supports ₹, Rs, INR etc)
   const amountMatch = msg.match(/(?:rs\.?|inr|₹)\s*([0-9,]+(?:\.\d{1,2})?)/i);
   const amount = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, '')) : 0;
 
@@ -22,17 +26,14 @@ export const parseSmsMessage = (
   if (/credited|received|transfer from|added/i.test(msg)) type = 'Credit';
   else if (/debited|sent via upi|trf to|withdrawn|payment/i.test(msg)) type = 'Debit';
 
-  // If neither amount nor type found, skip
   if (!amount || type === 'Unknown') return null;
 
-  // Auto categorize
   const category = autoDetectCategory(msg) ?? undefined;
 
-  // Construct transaction
   return {
     id: `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
     sender,
-    message: msg,
+    message: text,
     date,
     amount,
     type,
@@ -41,7 +42,6 @@ export const parseSmsMessage = (
   };
 };
 
-// 🧠 Auto category logic
 export const autoDetectCategory = (msg: string): string | undefined => {
   const text = msg.toLowerCase();
 

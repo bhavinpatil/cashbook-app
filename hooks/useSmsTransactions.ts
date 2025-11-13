@@ -4,10 +4,6 @@ import { useEffect, useState } from 'react';
 import { SmsTransaction } from '@/types/sms';
 import { getMonthKey, autoDetectCategory } from '@/utils/smsUtils';
 
-import { requestReadSmsPermission } from '@/utils/androidPermissions';
-import { readSmsInbox } from '@/utils/smsReader';
-
-
 export const useSmsTransactions = (monthKey?: string) => {
   const [transactions, setTransactions] = useState<SmsTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,11 +22,9 @@ export const useSmsTransactions = (monthKey?: string) => {
   };
 
   const addTransaction = async (tx: SmsTransaction, targetKey = key) => {
-    // Load month-specific storage
     const saved = await AsyncStorage.getItem(`sms_transactions_${targetKey}`);
     const current: SmsTransaction[] = saved ? JSON.parse(saved) : [];
 
-    // 🧠 Duplicate check: same message, date, and amount
     const duplicate = current.find(
       (t) => t.message === tx.message && t.amount === tx.amount && t.date === tx.date
     );
@@ -42,7 +36,33 @@ export const useSmsTransactions = (monthKey?: string) => {
     const updated = [updatedTx, ...current];
     await saveToStorage(updated, targetKey);
 
-    // Update UI state if it's the same month currently open
+    if (targetKey === key) setTransactions(updated);
+  };
+
+  // New bulk add helper: accepts multiple parsed transactions and saves them deduplicated
+  const addTransactions = async (txs: SmsTransaction[], targetKey = key) => {
+    const saved = await AsyncStorage.getItem(`sms_transactions_${targetKey}`);
+    const current: SmsTransaction[] = saved ? JSON.parse(saved) : [];
+
+    // dedupe against existing (message+amount+date)
+    const existingSet = new Set(current.map(t => `${t.message}||${t.amount}||${t.date}`));
+    const toAdd: SmsTransaction[] = [];
+
+    for (const tx of txs) {
+      const keyStr = `${tx.message}||${tx.amount}||${tx.date}`;
+      if (existingSet.has(keyStr)) continue;
+      // auto-detect category if missing
+      const detected = tx.category ?? autoDetectCategory(tx.message);
+      const finalTx = detected ? { ...tx, category: detected, labeled: true } : tx;
+      toAdd.push(finalTx);
+      existingSet.add(keyStr);
+    }
+
+    if (toAdd.length === 0) return;
+
+    const updated = [...toAdd, ...current];
+    await saveToStorage(updated, targetKey);
+
     if (targetKey === key) setTransactions(updated);
   };
 
@@ -75,6 +95,7 @@ export const useSmsTransactions = (monthKey?: string) => {
   return {
     transactions,
     addTransaction,
+    addTransactions, // new bulk helper
     updateTransaction,
     deleteTransaction,
     updateCategory,

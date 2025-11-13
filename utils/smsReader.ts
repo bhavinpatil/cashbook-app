@@ -1,25 +1,29 @@
 // utils/smsReader.ts
 import SmsAndroid from 'react-native-get-sms-android';
 import { parseSmsMessage } from './smsUtils'; // your parser
-import { getMonthKey } from './smsUtils';
 
 type RawSms = {
-    _id: string; // message id
-    address: string; // sender
+    _id: string;
+    address?: string;
     body: string;
-    date: string; // milliseconds since epoch (string)
+    date: string;
     thread_id?: string;
     type?: string;
 };
 
-export function readSmsInbox(
-    onSuccess: (parsed: ReturnType<typeof parseSmsMessage>[]) => void,
-    onError?: (err: any) => void
+/**
+ * readRawSmsInbox:
+ *  - reads SMS using react-native-get-sms-android and returns raw list (unparsed)
+ *  - callback receives RawSms[]
+ */
+export function readRawSmsInbox(
+    onSuccess: (raw: RawSms[]) => void,
+    onError?: (err: any) => void,
+    maxCount = 500
 ) {
-    // Example filter: fetch inbox, maxCount 500
     const filter = {
         box: 'inbox',
-        maxCount: 500,
+        maxCount,
     };
 
     SmsAndroid.list(
@@ -31,20 +35,39 @@ export function readSmsInbox(
         (count: number, smsList: string) => {
             try {
                 const messages: RawSms[] = JSON.parse(smsList || '[]');
-                const parsed: ReturnType<typeof parseSmsMessage>[] = [];
-
-                messages.forEach((m) => {
-                    // `m.date` is epoch millis string — convert to ISO
-                    const isoDate = new Date(Number(m.date)).toISOString();
-                    const p = parseSmsMessage(m.body, m.address ?? 'unknown', isoDate);
-                    if (p) parsed.push(p);
-                });
-
-                onSuccess(parsed);
+                onSuccess(messages);
             } catch (e) {
                 console.error('sms parse error', e);
                 onError?.(e);
             }
         }
+    );
+}
+
+/**
+ * readSmsInbox:
+ *  - backwards compatible helper that returns parsed transactions (used earlier)
+ */
+export function readSmsInbox(
+    onSuccess: (parsed: ReturnType<typeof parseSmsMessage>[]) => void,
+    onError?: (err: any) => void,
+    maxCount = 500
+) {
+    readRawSmsInbox(
+        (raw) => {
+            try {
+                const parsed: ReturnType<typeof parseSmsMessage>[] = [];
+                raw.forEach((m) => {
+                    const isoDate = new Date(Number(m.date)).toISOString();
+                    const p = parseSmsMessage(m.body, m.address ?? 'unknown', isoDate);
+                    if (p) parsed.push(p);
+                });
+                onSuccess(parsed);
+            } catch (e) {
+                onError?.(e);
+            }
+        },
+        (err) => onError?.(err),
+        maxCount
     );
 }
