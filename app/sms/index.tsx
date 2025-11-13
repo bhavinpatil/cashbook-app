@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   Platform,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -17,7 +18,7 @@ import SmsSummaryChart from '@/components/sms/SmsSummaryChart';
 import { SmsTransaction } from '@/types/sms';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ImportSmsModal from '@/components/sms/ImportSmsModal';
-import FilterBottomSheet from '@/components/sms/FilterBottomSheet';
+import FilterModal from '@/components/sms/FilterModal';
 import { requestReadSmsPermission } from '@/utils/androidPermissions';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -25,17 +26,17 @@ export default function SmsTransactionsScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
 
-  // date state (day navigation)
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
   const currentMonth = getMonthKey(currentDate);
 
-  // hook (month-storage)
+  // NOTE: include deleteTransaction from hook
   const {
     transactions: monthTransactions,
     getTotals,
     loading,
     updateCategory,
     addTransactions,
+    deleteTransaction,
   } = useSmsTransactions(currentMonth);
 
   const totals = getTotals();
@@ -49,20 +50,16 @@ export default function SmsTransactionsScreen() {
   const [filters, setFilters] = useState<any>({});
   const [insightsMode, setInsightsMode] = useState<'Daily' | 'Monthly'>('Daily');
 
-  // helper: same day
+  // helper same day
   const isSameDay = (a: Date, b: Date) =>
     a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate();
 
-  // derived lists
   const dayTransactions = monthTransactions.filter((t) => isSameDay(new Date(t.date), currentDate));
   const monthListTransactions = monthTransactions.slice();
-
-  // which list to show in the flatlist depending on mode
   const visibleList = insightsMode === 'Daily' ? dayTransactions : monthListTransactions;
 
-  // apply filters client-side
   const filteredTransactions = visibleList
     .filter((t) => (filters.type && filters.type !== 'All' ? t.type === filters.type : true))
     .sort((a, b) => {
@@ -70,10 +67,8 @@ export default function SmsTransactionsScreen() {
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
 
-  // show chart using mode selection
   const chartTransactions = insightsMode === 'Daily' ? dayTransactions : monthListTransactions;
 
-  // update months available from AsyncStorage
   useEffect(() => {
     (async () => {
       try {
@@ -91,17 +86,15 @@ export default function SmsTransactionsScreen() {
     })();
   }, [monthTransactions]);
 
-  // month change via dropdown (string key like '2025_11')
   const changeMonthTo = (mk: string) => {
     const [y, m] = mk.split('_').map(Number);
     const cand = new Date(y, m - 1, 1);
     if (cand > new Date()) return;
-    // set currentDate to first day of that month to keep day nav consistent
     setCurrentDate(new Date(y, m - 1, 1));
     setMonthPickerOpen(false);
   };
 
-  // day navigation
+  // day nav
   const goDay = (delta: number) => {
     setCurrentDate((prev) => {
       const next = new Date(prev);
@@ -112,7 +105,6 @@ export default function SmsTransactionsScreen() {
     });
   };
 
-  // Import handler
   const onImportPress = async () => {
     const ok = await requestReadSmsPermission();
     if (!ok) {
@@ -123,7 +115,6 @@ export default function SmsTransactionsScreen() {
   };
 
   const onAfterImport = async () => {
-    // refresh month keys and jump to today after import
     try {
       const keys = await AsyncStorage.getAllKeys();
       const smsKeys = keys
@@ -137,7 +128,6 @@ export default function SmsTransactionsScreen() {
     }
   };
 
-  // clear storage helper
   async function clearSmsData() {
     try {
       const keys = await AsyncStorage.getAllKeys();
@@ -164,6 +154,31 @@ export default function SmsTransactionsScreen() {
     );
   }
 
+  // Delete flow: confirmation then delete via hook
+  const confirmAndDelete = (id: string) => {
+    Alert.alert(
+      'Delete Transaction',
+      'Are you sure you want to delete this transaction? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteTransaction(id);
+              setSelectedItem(null);
+            } catch (e) {
+              console.error('delete error', e);
+              alert('Failed to delete transaction.');
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header */}
@@ -177,9 +192,7 @@ export default function SmsTransactionsScreen() {
             <Ionicons name="chevron-back" size={22} color={theme.textDark} />
           </TouchableOpacity>
 
-          <Text style={[styles.headerText, { color: theme.textDark }]}>
-            {currentDate.toDateString()}
-          </Text>
+          <Text style={[styles.headerText, { color: theme.textDark }]}>{currentDate.toDateString()}</Text>
 
           <TouchableOpacity onPress={() => goDay(1)}>
             <Ionicons name="chevron-forward" size={22} color={theme.textDark} />
@@ -191,7 +204,6 @@ export default function SmsTransactionsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Month dropdown */}
       {monthPickerOpen && (
         <View style={[styles.monthList, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <FlatList
@@ -220,7 +232,7 @@ export default function SmsTransactionsScreen() {
         </Text>
       </View>
 
-      {/* Actions: Import + Toggle */}
+      {/* Actions */}
       <View style={styles.actionsRow}>
         <TouchableOpacity style={[styles.importButton, { backgroundColor: theme.primary }]} onPress={onImportPress}>
           <Ionicons name="mail-outline" size={18} color="#fff" />
@@ -280,11 +292,12 @@ export default function SmsTransactionsScreen() {
         }
       />
 
-      {/* Categorize modal */}
+      {/* Categorize + Delete Modal */}
       {selectedItem && (
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, { backgroundColor: theme.card }]}>
             <Text style={[styles.modalTitle, { color: theme.textDark }]}>Categorize Transaction</Text>
+
             {['Groceries', 'Bills', 'Fuel', 'Travel', 'Food', 'Other'].map((cat) => (
               <TouchableOpacity
                 key={cat}
@@ -297,8 +310,17 @@ export default function SmsTransactionsScreen() {
                 <Text style={{ color: theme.textDark }}>{cat}</Text>
               </TouchableOpacity>
             ))}
+
+            {/* Delete full-width red button */}
+            <TouchableOpacity
+              onPress={() => confirmAndDelete(selectedItem.id)}
+              style={[styles.deleteBtn]}
+            >
+              <Text style={{ color: '#fff', fontWeight: '700' }}>Delete Transaction</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity onPress={() => setSelectedItem(null)}>
-              <Text style={{ color: theme.danger, textAlign: 'center', marginTop: 10 }}>Cancel</Text>
+              <Text style={{ color: theme.textLight, textAlign: 'center', marginTop: 10 }}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -313,16 +335,13 @@ export default function SmsTransactionsScreen() {
       />
 
       {/* Filter bottom sheet */}
-      <FilterBottomSheet
+      <FilterModal
         visible={filterSheetOpen}
         onClose={() => setFilterSheetOpen(false)}
-        onApply={(f) => {
-          setFilters(f);
-          setFilterSheetOpen(false);
-        }}
+        onApply={setFilters}
       />
 
-      {/* Floating Filter FAB */}
+      {/* FAB */}
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={() => setFilterSheetOpen(true)}
@@ -332,7 +351,6 @@ export default function SmsTransactionsScreen() {
             right: 16,
             bottom: Math.max(insets.bottom, 16) + 8,
             backgroundColor: theme.primary,
-            // elevation shadow
             ...Platform.select({
               android: { elevation: 6 },
               ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 6 },
@@ -368,14 +386,22 @@ const styles = StyleSheet.create({
   category: { fontSize: 13, fontWeight: '600' },
 
   modalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
-  modalCard: { width: '80%', borderRadius: 16, padding: 20, elevation: 6 },
+  modalCard: { width: '86%', borderRadius: 16, padding: 18, elevation: 6 },
   modalTitle: { fontSize: 18, fontWeight: '700', textAlign: 'center', marginBottom: 12 },
-  catButton: { borderWidth: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center', marginVertical: 4 },
+  catButton: { borderWidth: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center', marginVertical: 6 },
+
+  // Delete full-width button
+  deleteBtn: {
+    marginTop: 12,
+    backgroundColor: '#D32F2F', // red
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
 
   monthList: { borderWidth: 1, borderRadius: 10, marginVertical: 8, maxHeight: 220 },
   monthItem: { padding: 10, borderBottomWidth: 1 },
 
-  // FAB
   fab: {
     position: 'absolute',
     width: 56,
