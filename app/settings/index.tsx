@@ -1,6 +1,5 @@
 // app/settings/index.tsx
 import EditNameModal from '@/components/EditNameModal';
-import ScrollableScreenContainer from '@/components/ScrollableScreenContainer';
 import AddBookModal from '@/components/settings/AddBookModal';
 import AddBusinessModal from '@/components/settings/AddBusinessModal';
 import BookSection from '@/components/settings/BookSection';
@@ -15,13 +14,14 @@ import { Alert, StyleSheet, View, Text, TouchableOpacity, Modal } from 'react-na
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { exportAllData, importAllData } from '@/utils/dataBackup';
-import ListDialogModal from '@/components/settings/ListDialogModal';
 import SimpleListModal from '@/components/settings/SimpleListModal';
 import ScreenTitle from '@/components/ui/ScreenTitle';
 
+type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
+
 interface GridItemProps {
   title: string;
-  icon: string;
+  icon: IoniconName;   // FIXED
   onPress: () => void;
 }
 
@@ -37,7 +37,7 @@ const SettingsGridItem: React.FC<GridItemProps> = ({ title, icon, onPress }) => 
       onPress={onPress}
       activeOpacity={0.8}
     >
-      <Ionicons name={icon as any} size={26} color={theme.primary} />
+      <Ionicons name={icon} size={26} color={theme.primary} />
       <Text style={[styles.gridText, { color: theme.textDark }]}>{title}</Text>
     </TouchableOpacity>
   );
@@ -178,7 +178,7 @@ export default function SettingsScreen() {
         <BookSection
           books={books}
           onAdd={() => setAddBookVisible(true)}
-          onEdit={(id) => { setSelectedItem({ id, type: "book" }); setEditVisible(true); }}
+          onEdit={(id: string) => { setSelectedItem({ id, type: "book" }); setEditVisible(true); }}
           onDelete={deleteBook}
         />
       </SimpleListModal>
@@ -191,7 +191,7 @@ export default function SettingsScreen() {
         <BusinessSection
           businesses={businesses}
           onAdd={() => setAddBusinessVisible(true)}
-          onEdit={(id) => { setSelectedItem({ id, type: "business" }); setEditVisible(true); }}
+          onEdit={(id: string) => { setSelectedItem({ id, type: "business" }); setEditVisible(true); }}
           onDelete={deleteBusiness}
         />
       </SimpleListModal>
@@ -237,7 +237,7 @@ export default function SettingsScreen() {
         onClose={() => setAddBusinessVisible(false)}
         value={newBusinessName}
         setValue={setNewBusinessName}
-        onSave={(name) => {
+        onSave={(name: string) => {
           if (!name) return Alert.alert("Missing name");
 
           const newBiz = { id: Date.now().toString(), name };
