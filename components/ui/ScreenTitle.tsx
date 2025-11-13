@@ -1,22 +1,15 @@
+// components/ui/ScreenTitle.tsx
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
-import { useTheme } from '@/contexts/ThemeContext';
+import { StyleSheet } from 'react-native';
+import { H2 } from './Typography';
 
 export default function ScreenTitle({ children }: { children: string }) {
-  const { theme } = useTheme();
-
-  return (
-    <Text style={[styles.title, { color: theme.textDark }]}>
-      {children}
-    </Text>
-  );
+  return <H2 style={styles.title}>{children}</H2>;
 }
 
 const styles = StyleSheet.create({
   title: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 16,
-    marginTop: 4,
+    marginTop: 0,
+    marginBottom: 12,
   },
 });

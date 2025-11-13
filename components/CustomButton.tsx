@@ -1,17 +1,17 @@
 // components/CustomButton.tsx
-
 import React from 'react';
 import { Pressable, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
+import { SPACING, RADIUS, TYPOGRAPHY, SHADOW } from '@/constants/design';
 
-interface CustomButtonProps {
+interface Props {
   title: string;
   onPress: () => void;
   type?: 'primary' | 'secondary' | 'outline' | 'danger' | 'small';
   style?: ViewStyle | ViewStyle[];
   disabled?: boolean;
   loading?: boolean;
-  textColor?: string; // ✅ added
+  textColor?: string;
 }
 
 export default function CustomButton({
@@ -21,73 +21,56 @@ export default function CustomButton({
   style,
   disabled = false,
   loading = false,
-  textColor, // ✅ added
-}: CustomButtonProps) {
+  textColor,
+}: Props) {
   const { theme } = useTheme();
 
-  const backgroundColor =
-    type === 'primary'
-      ? theme.primary
-      : type === 'danger'
-      ? theme.danger
-      : type === 'secondary'
-      ? theme.card
-      : 'transparent';
-
-  const borderColor = type === 'outline' ? theme.primary : 'transparent';
-
-  const defaultTextColor =
-    type === 'primary' || type === 'danger' ? '#fff' : theme.textDark;
+  const stylesForType = {
+    backgroundColor:
+      type === 'primary' ? theme.primary :
+        type === 'danger' ? theme.danger :
+          type === 'secondary' ? theme.card : 'transparent',
+    borderColor: type === 'outline' ? theme.primary : 'transparent',
+    textColor:
+      textColor ??
+      (type === 'primary' || type === 'danger' ? '#fff' : theme.textDark),
+  };
 
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
       style={({ pressed }) => [
-        styles.button,
-        type === 'small' && styles.smallButton,
-        { backgroundColor, borderColor },
-        pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
+        baseStyles.button,
+        {
+          backgroundColor: stylesForType.backgroundColor,
+          borderColor: stylesForType.borderColor,
+          borderRadius: RADIUS.md,
+          paddingVertical: type === 'small' ? 8 : 12,
+        },
+        SHADOW.soft,
+        pressed && { opacity: 0.9, transform: [{ scale: 0.995 }] },
         style,
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={textColor || defaultTextColor} />
+        <ActivityIndicator color={stylesForType.textColor} />
       ) : (
-        <Text
-          style={[
-            styles.text,
-            type === 'small' && { fontSize: 14 },
-            { color: textColor || defaultTextColor },
-          ]}
-        >
-          {title}
-        </Text>
+        <Text style={[baseStyles.text, { color: stylesForType.textColor }]}>{title}</Text>
       )}
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   button: {
-    paddingVertical: 12,
-    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  smallButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 8,
+    width: '100%',
   },
   text: {
-    fontSize: 16,
+    ...TYPOGRAPHY.body,
     fontWeight: '600',
   },
 });

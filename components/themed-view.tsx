@@ -1,3 +1,4 @@
+// components/themed-view.tsx
 import { View, type ViewProps } from 'react-native';
 
 import { useThemeColor } from '@/hooks/use-theme-color';

@@ -12,15 +12,16 @@ const THEME_KEY = 'appTheme';
 
 const ThemeContext = createContext<ThemeContextProps>({
   theme: THEMES.light,
-  setThemeByName: () => {},
+  setThemeByName: () => { },
 });
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [themeName, setThemeName] = useState<keyof typeof THEMES>('light');
   const [isLoaded, setIsLoaded] = useState(false);
+
   const theme = THEMES[themeName];
 
-  // 🔹 Load saved theme on startup
+  // Load saved theme
   useEffect(() => {
     const loadStoredTheme = async () => {
       try {
@@ -37,7 +38,6 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     loadStoredTheme();
   }, []);
 
-  // 🔹 Save theme when user changes it
   const setThemeByName = async (name: keyof typeof THEMES) => {
     try {
       setThemeName(name);
@@ -47,7 +47,6 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // 🔸 Optional: Wait until theme is loaded before rendering app
   if (!isLoaded) return null;
 
   return (
