@@ -10,12 +10,15 @@ import SummaryTabs from '@/components/insights/SummaryTabs';
 import { Transaction } from '@/types/types';
 import { useSmartReload } from '@/hooks/useSmartReload';
 import ScreenTitle from '@/components/ui/ScreenTitle';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function InsightsScreen() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [currentMonth, setCurrentMonth] = useState(dayjs());
   const [activeTab, setActiveTab] = useState<'spends' | 'incoming'>('spends');
   const [loading, setLoading] = useState(true);
+
+  const { theme } = useTheme();
 
   const loadAllTransactions = useCallback(async () => {
     try {
@@ -33,7 +36,6 @@ export default function InsightsScreen() {
         }
       }
 
-      // Filter for current month
       const filtered = allTransactions.filter((tx) =>
         dayjs(tx.date).isSame(currentMonth, 'month')
       );
@@ -46,25 +48,25 @@ export default function InsightsScreen() {
     }
   }, [currentMonth]);
 
-  // ✅ Use Smart Reload Hook (focus, event, appState)
   useSmartReload('transactions', loadAllTransactions, [currentMonth]);
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <Text style={{ color: '#222' }}>Loading Insights...</Text>
+      <View style={[styles.centered, { backgroundColor: theme.background }]}>
+        <Text style={{ color: theme.textDark }}>Loading Insights...</Text>
       </View>
     );
   }
 
   return (
-
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
-      {/* Header Month Selector */}
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      contentContainerStyle={{ paddingBottom: 60 }}
+    >
       <ScreenTitle>Analytics</ScreenTitle>
+
       <Header currentMonth={currentMonth} setCurrentMonth={setCurrentMonth} />
 
-      {/* Summary Tabs */}
       <SummaryTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -72,7 +74,6 @@ export default function InsightsScreen() {
         currentMonth={currentMonth}
       />
 
-      {/* Charts */}
       {activeTab === 'spends' && (
         <SpendsChart transactions={transactions} currentMonth={currentMonth} />
       )}
@@ -85,6 +86,6 @@ export default function InsightsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f2f2f7', padding: 16 },
+  container: { flex: 1, padding: 16 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });

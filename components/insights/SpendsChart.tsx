@@ -1,3 +1,4 @@
+// components/insights/SpendsChart.tsx
 import React, { useMemo, useState, useEffect } from 'react';
 import {
     View,
@@ -7,27 +8,28 @@ import {
     Dimensions,
 } from 'react-native';
 import { LineChart, BarChart } from 'react-native-chart-kit';
+import dayjs, { Dayjs } from 'dayjs';
+import { Transaction } from '@/types/types';
 import { useBudget } from '@/hooks/useBudget';
-import dayjs from 'dayjs';
 import BudgetModal from './BudgetModal';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const screenWidth = Dimensions.get('window').width;
 
-export default function SpendsChart({
-    transactions,
-    currentMonth,
-}: {
-    transactions: any[];
-    currentMonth: dayjs.Dayjs;
-}) {
+interface Props {
+    transactions: Transaction[];
+    currentMonth: Dayjs;
+}
+
+export default function SpendsChart({ transactions, currentMonth }: Props) {
+    const { theme } = useTheme();
     const { loadBudget, saveBudget } = useBudget();
 
-    const [budget, setBudget] = useState<number>(0);
+    const [budget, setBudget] = useState(0);
     const [showBudgetModal, setShowBudgetModal] = useState(false);
-    const [tempBudget, setTempBudget] = useState<string>('0');
+    const [tempBudget, setTempBudget] = useState('0');
     const [isDaily, setIsDaily] = useState(true);
 
-    // 🧠 Load global budget (only once)
     useEffect(() => {
         (async () => {
             const saved = await loadBudget();
@@ -35,13 +37,7 @@ export default function SpendsChart({
         })();
     }, []);
 
-    // 💾 Save global budget
-    const handleSaveBudget = async (newBudget: number) => {
-        setBudget(newBudget);
-        await saveBudget(newBudget);
-    };
-
-    // 🔢 Filter transactions for current + previous months
+    // Filter current + previous month
     const monthTx = useMemo(
         () => transactions.filter(tx => dayjs(tx.date).isSame(currentMonth, 'month')),
         [transactions, currentMonth]
@@ -56,98 +52,119 @@ export default function SpendsChart({
     );
 
     const daysInMonth = currentMonth.daysInMonth();
-    const labels = Array.from({ length: daysInMonth }, (_, i) => String(i + 1));
+    const labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
 
-    // 🧮 Daily debit totals
+    // Daily debit totals
     const dailyDebit = Array(daysInMonth).fill(0);
     monthTx.forEach(tx => {
-        const day = dayjs(tx.date).date() - 1;
-        if (tx.type === 'debit') dailyDebit[day] += tx.amount;
+        if (tx.type === 'debit') {
+            const dayIndex = dayjs(tx.date).date() - 1;
+            dailyDebit[dayIndex] += tx.amount;
+        }
     });
 
-    // Cumulative data
-    const cumulativeDebit = dailyDebit.reduce((acc, val, i) => {
-        acc[i] = (i === 0 ? val : acc[i - 1] + val);
-        return acc;
-    }, [] as number[]);
+    // Cumulative debit
+    const cumulativeDebit: number[] = [];
+    dailyDebit.forEach((v, i) => {
+        cumulativeDebit[i] = v + (i > 0 ? cumulativeDebit[i - 1] : 0);
+    });
 
+    // Trim chart to today's date
     const today = dayjs();
     const isCurrentMonth = today.isSame(currentMonth, 'month');
     const daysToShow = isCurrentMonth ? today.date() : daysInMonth;
+
     const visibleData = cumulativeDebit.slice(0, daysToShow);
     const visibleLabels = labels.slice(0, daysToShow);
 
     const spendsTotal = visibleData[visibleData.length - 1] || 0;
-    const lastMonthSpends = prevMonthTx
-        .filter(tx => tx.type === 'debit')
-        .reduce((sum, tx) => sum + tx.amount, 0);
 
-    // 📊 Monthly Spends for last 6 months
+    // ---- MONTHLY BAR CHART (restore old working logic) ----
     const monthlyLabels: string[] = [];
     const monthlySpends: number[] = [];
+
     for (let i = 5; i >= 0; i--) {
         const m = currentMonth.subtract(i, 'month');
         const total = transactions
-            .filter(tx => dayjs(tx.date).isSame(m, 'month') && tx.type === 'debit')
+            .filter(tx => tx.type === 'debit' && dayjs(tx.date).isSame(m, 'month'))
             .reduce((sum, tx) => sum + tx.amount, 0);
+
         monthlyLabels.push(m.format('MMM'));
         monthlySpends.push(total);
     }
 
-    // 💰 Format Y-axis labels
-    const formatYAxis = (value: any) => {
-        const num = Number(value);
-        if (isNaN(num)) return '0';
-        if (num >= 100000) return `${(num / 100000).toFixed(1)}L`;
-        if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-        return num.toFixed(0);
+    // Format Y Axis
+    const formatYAxis = (value: number) => {
+        if (value >= 100000) return `${(value / 100000).toFixed(1)}L`;
+        if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+        return `${value}`;
     };
 
     const chartConfig = {
-        backgroundColor: '#fff',
-        backgroundGradientFrom: '#fff',
-        backgroundGradientTo: '#fff',
+        backgroundColor: theme.card,
+        backgroundGradientFrom: theme.card,
+        backgroundGradientTo: theme.card,
         decimalPlaces: 0,
-        color: (opacity = 1) => `rgba(30,30,30,${opacity})`,
-        labelColor: (opacity = 1) => `rgba(60,60,60,${opacity})`,
-        propsForBackgroundLines: { strokeDasharray: '4', strokeWidth: 0.5 },
+        color: (opacity = 1) => theme.textDark,
+        labelColor: (opacity = 1) => theme.textLight,
+        propsForBackgroundLines: {
+            strokeDasharray: '4',
+            stroke: theme.border,
+            strokeWidth: 0.5,
+        },
     };
 
-    const percentUsed = budget > 0 ? Math.min((spendsTotal / budget) * 100, 100) : 0;
+    const percentUsed =
+        budget > 0 ? Math.min((spendsTotal / budget) * 100, 100).toFixed(1) : '0';
 
     return (
         <>
-            {/* Budget Summary */}
-            <View style={styles.comparisonContainer}>
-                <TouchableOpacity
-                    style={styles.comparisonBox}
-                    activeOpacity={0.8}
-                    onPress={() => setShowBudgetModal(true)}
-                >
-                    <Text style={styles.smallText}>This month so far</Text>
-                    <Text style={[styles.valueText, { color: '#e63946' }]}>
-                        ₹{spendsTotal.toFixed(0)} / ₹{budget.toLocaleString()}
+            {/* HEADER COMPARISON */}
+            <View style={styles.comparisonRow}>
+                <TouchableOpacity onPress={() => setShowBudgetModal(true)}>
+                    <Text style={[styles.smallText, { color: theme.textLight }]}>
+                        This month so far
                     </Text>
+                    <Text style={[styles.valueText, { color: '#e63946' }]}>
+                        ₹{spendsTotal} / ₹{budget}
+                    </Text>
+
                     {budget > 0 && (
-                        <Text style={[styles.percentText, { color: percentUsed > 90 ? 'red' : '#2a9d8f' }]}>
-                            {percentUsed.toFixed(1)}% used
+                        <Text
+                            style={{
+                                fontSize: 13,
+                                marginTop: 2,
+                                color:
+                                    Number(percentUsed) > 90
+                                        ? theme.danger
+                                        : theme.success,
+                            }}
+                        >
+                            {percentUsed}% used
                         </Text>
                     )}
                 </TouchableOpacity>
-                <View style={styles.comparisonBox}>
-                    <Text style={styles.smallText}>Last month</Text>
-                    <Text style={[styles.valueText, { color: '#000' }]}>
-                        ₹{formatYAxis(lastMonthSpends)}
+
+                <View>
+                    <Text style={[styles.smallText, { color: theme.textLight }]}>
+                        Last month
+                    </Text>
+                    <Text style={[styles.valueText, { color: theme.textDark }]}>
+                        ₹
+                        {prevMonthTx
+                            .filter(tx => tx.type === 'debit')
+                            .reduce((s, tx) => s + tx.amount, 0)}
                     </Text>
                 </View>
             </View>
 
-            {/* Chart Section */}
-            <View style={styles.graphCard}>
-                <Text style={styles.sectionTitle}>
+            {/* GRAPH CARD */}
+            <View style={[styles.card, { backgroundColor: theme.card }]}>
+                <Text style={[styles.sectionTitle, { color: theme.textDark }]}>
                     {isDaily ? 'Daily Spends Overview' : 'Monthly Spends Overview'}
                 </Text>
 
+                {/* DAILY CHART */}
                 {isDaily ? (
                     <LineChart
                         data={{
@@ -158,12 +175,12 @@ export default function SpendsChart({
                                     color: () => '#e63946',
                                     strokeWidth: 2,
                                 },
-                                // ✅ Add global budget line
+                                // Budget line
                                 ...(budget > 0
                                     ? [
                                         {
                                             data: Array(visibleData.length).fill(budget),
-                                            color: () => 'rgba(46, 204, 113, 0.8)', // green line
+                                            color: () => theme.success,
                                             strokeWidth: 2,
                                             withDots: false,
                                         },
@@ -172,15 +189,13 @@ export default function SpendsChart({
                             ],
                         }}
                         width={screenWidth - 60}
-                        height={260}
+                        height={250}
                         yAxisLabel="₹"
-                        formatYLabel={(v) => formatYAxis(Number(v))}
+                        formatYLabel={v => formatYAxis(Number(v))}
                         chartConfig={chartConfig}
                         fromZero
                         withInnerLines
-                        withHorizontalLabels
                         bezier
-                        segments={5}
                         style={{ borderRadius: 12 }}
                     />
                 ) : (
@@ -193,52 +208,54 @@ export default function SpendsChart({
                         height={260}
                         yAxisLabel="₹"
                         yAxisSuffix=""
-                        fromZero
                         chartConfig={{
                             ...chartConfig,
-                            barPercentage: 0.6,
-                            color: (opacity = 1) => `rgba(230,57,70,${opacity})`,
-                            labelColor: (opacity = 1) => `rgba(60,60,60,${opacity})`,
+                            barPercentage: 0.55,
+                            color: () => '#e63946',
                         }}
+                        fromZero
+                        showValuesOnTopOfBars={false}
                         style={{ borderRadius: 12 }}
                     />
                 )}
-
-                {budget > 0 && (
-                    <Text style={{ textAlign: 'right', marginTop: 4, color: '#2ecc71', fontSize: 12 }}>
-                        Budget limit: ₹{budget.toLocaleString()}
-                    </Text>
-                )}
-
-                {/* Toggle Buttons */}
+                {/* TOGGLE BUTTONS */}
                 <View style={styles.toggleRow}>
                     <TouchableOpacity
                         onPress={() => setIsDaily(true)}
-                        style={[styles.toggleButton, isDaily && styles.activeToggle]}
+                        style={[
+                            styles.toggleBtn,
+                            isDaily && { backgroundColor: theme.primary },
+                        ]}
                     >
-                        <Text style={isDaily ? styles.toggleTextActive : styles.toggleText}>Daily</Text>
+                        <Text style={{ color: isDaily ? '#fff' : theme.textDark }}>
+                            Daily
+                        </Text>
                     </TouchableOpacity>
+
                     <TouchableOpacity
                         onPress={() => setIsDaily(false)}
-                        style={[styles.toggleButton, !isDaily && styles.activeToggle]}
+                        style={[
+                            styles.toggleBtn,
+                            !isDaily && { backgroundColor: theme.primary },
+                        ]}
                     >
-                        <Text style={!isDaily ? styles.toggleTextActive : styles.toggleText}>Monthly</Text>
+                        <Text style={{ color: !isDaily ? '#fff' : theme.textDark }}>
+                            Monthly
+                        </Text>
                     </TouchableOpacity>
                 </View>
             </View>
 
-            {/* ✅ Always show Budget Modal */}
+            {/* MODAL */}
             <BudgetModal
                 visible={showBudgetModal}
                 budget={budget}
                 tempBudget={tempBudget}
                 setTempBudget={setTempBudget}
-                onCancel={() => {
-                    setShowBudgetModal(false);
-                    setTempBudget(String(budget));
-                }}
-                onSave={(newBudget) => {
-                    handleSaveBudget(newBudget);
+                onCancel={() => setShowBudgetModal(false)}
+                onSave={async newBudget => {
+                    await saveBudget(newBudget);
+                    setBudget(newBudget);
                     setShowBudgetModal(false);
                 }}
             />
@@ -247,23 +264,17 @@ export default function SpendsChart({
 }
 
 const styles = StyleSheet.create({
-    comparisonContainer: {
+    comparisonRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginBottom: 16,
     },
-    comparisonBox: { alignItems: 'flex-start' },
-    smallText: { fontSize: 13, color: '#666' },
+    smallText: { fontSize: 13 },
     valueText: { fontSize: 16, fontWeight: '700' },
-    percentText: { fontSize: 13, marginTop: 2 },
-    graphCard: {
-        backgroundColor: '#fff',
+    card: {
         borderRadius: 16,
         padding: 16,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-        elevation: 3,
+        marginBottom: 20,
     },
     sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 10 },
     toggleRow: {
@@ -272,15 +283,10 @@ const styles = StyleSheet.create({
         gap: 12,
         marginTop: 16,
     },
-    toggleButton: {
-        backgroundColor: '#e0e0e0',
-        borderRadius: 20,
-        paddingHorizontal: 20,
+    toggleBtn: {
         paddingVertical: 6,
+        paddingHorizontal: 20,
+        borderRadius: 20,
+        backgroundColor: '#ccc',
     },
-    activeToggle: {
-        backgroundColor: '#111',
-    },
-    toggleText: { color: '#333', fontWeight: '600' },
-    toggleTextActive: { color: '#fff', fontWeight: '600' },
 });
