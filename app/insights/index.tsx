@@ -9,6 +9,7 @@ import SpendsChart from '@/components/insights/SpendsChart';
 import SummaryTabs from '@/components/insights/SummaryTabs';
 import { Transaction } from '@/types/types';
 import { useSmartReload } from '@/hooks/useSmartReload';
+import ScreenTitle from '@/components/ui/ScreenTitle';
 
 export default function InsightsScreen() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -57,8 +58,10 @@ export default function InsightsScreen() {
   }
 
   return (
+
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
       {/* Header Month Selector */}
+      <ScreenTitle>Analytics</ScreenTitle>
       <Header currentMonth={currentMonth} setCurrentMonth={setCurrentMonth} />
 
       {/* Summary Tabs */}

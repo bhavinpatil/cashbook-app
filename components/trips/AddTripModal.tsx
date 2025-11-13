@@ -147,7 +147,7 @@ export default function AddTripModal({ visible, onClose, onSave, initial }: Prop
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="fade" transparent>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
           <View style={styles.sheetHeader}>
@@ -296,15 +296,22 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
   sheet: {
     backgroundColor: '#fff',
-    padding: 16,
-    borderTopLeftRadius: 14,
-    borderTopRightRadius: 14,
-    maxHeight: '90%',
+    padding: 18,
+    borderRadius: 16,
+    width: '95%',
+    maxHeight: '85%',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
   },
+
   sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   title: { fontSize: 18, fontWeight: '600' },
   dateRow: { marginTop: 12, flexDirection: 'row', justifyContent: 'space-between' },

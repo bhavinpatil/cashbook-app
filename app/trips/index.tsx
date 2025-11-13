@@ -3,12 +3,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 import AddTripModal from '@/components/trips/AddTripModal';
@@ -17,6 +17,7 @@ import TripList from '@/components/trips/TripList';
 import TripSummary from '@/components/trips/TripSummary';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Trip, useTrips } from '@/hooks/useTrips';
+import ScreenTitle from '@/components/ui/ScreenTitle';
 
 export default function TripScreen() {
   const { theme } = useTheme();
@@ -46,7 +47,7 @@ export default function TripScreen() {
 
       {/* Header */}
       <View style={styles.headerRow}>
-        <Text style={[styles.headerText, { color: theme.textDark }]}>Trips</Text>
+        <ScreenTitle>Trips Log</ScreenTitle>
         <View style={{ flexDirection: 'row' }}>
           {/* Insights Button */}
           <TouchableOpacity
@@ -70,7 +71,7 @@ export default function TripScreen() {
       </View>
 
       {/* Summary */}
-      
+
       {!showChart && <TripSummary trips={trips} />}
 
       {/* Conditional View */}
@@ -88,7 +89,7 @@ export default function TripScreen() {
           }}
         />
       )}
-      
+
 
       {/* Add/Edit Trip Modal */}
       <AddTripModal

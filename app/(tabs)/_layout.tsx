@@ -19,7 +19,7 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: theme.textLight,
       }}
     >
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="businesses"
         options={{
           title: 'Businesses',
@@ -27,7 +27,7 @@ export default function TabsLayout() {
             <Ionicons name="briefcase-outline" color={color} size={size} />
           ),
         }}
-      />
+      /> */}
       <Tabs.Screen
         name="books"
         options={{
@@ -51,16 +51,16 @@ export default function TabsLayout() {
         options={{
           title: 'Trips Log',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="car-outline" color={color} size={size} />
+            <Ionicons name="bicycle-outline" color={color} size={size} />
           ),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
+          title: 'More',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings-outline" color={color} size={size} />
+            <Ionicons name="layers-outline" color={color} size={size} />
           ),
         }}
       />
