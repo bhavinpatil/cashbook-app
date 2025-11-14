@@ -1,14 +1,14 @@
 // components/InputField.tsx
 
 import React from 'react';
-import { TextInput, StyleSheet, ViewStyle } from 'react-native';
-import { COLORS } from '../constants/theme';
+import { TextInput, StyleSheet } from 'react-native';
+import { COLORS } from '@/constants/theme';
 
 interface InputFieldProps {
   placeholder?: string;
   value: string;
   onChangeText: (text: string) => void;
-  style?: ViewStyle;
+  style?: TextInput["props"]["style"];
   secureTextEntry?: boolean;
 }
 

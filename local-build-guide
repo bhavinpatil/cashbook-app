@@ -1,0 +1,230 @@
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ ls
+'@blackatexpo__cashbook-app.jks'   apk-output/   app.json   components/   contexts/     eas.json           expo-env.d.ts   hooks/          package.json        README.md   tsconfig.json   utils
+ android/                          app/          assets/    constants/    device.json   eslint.config.js   final.zip       node_modules/   package-lock.json   scripts/    types/
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ ls components/*
+components/CustomButton.tsx      components/EditNameModal.tsx  components/haptic-tab.tsx  components/InputField.tsx            components/ScreenContainer.tsx            components/themed-text.
+components/CustomEditButton.tsx  components/external-link.tsx  components/hello-wave.tsx  components/parallax-scroll-view.tsx  components/ScrollableScreenContainer.tsx  components/themed-view.
+
+components/insights:
+BudgetModal.tsx  Header.tsx  IncomingChart.tsx  SpendsChart.tsx  SummaryTabs.tsx
+
+components/investments:
+AddInvestmentModal.tsx  InvestmentGraph.tsx  InvestmentList.tsx  InvestmentMonthHeader.tsx  InvestmentPieCharts.tsx  InvestmentSummaryTabs.tsx
+
+components/settings:
+AddBookModal.tsx  AddBusinessModal.tsx  BookSection.tsx  BusinessSection.tsx  ListDialogModal.tsx  SettingsGridItem.tsx  SimpleListModal.tsx  ThemePickerModal.tsx  ThemeSelector.tsx
+
+components/sms:
+FilterModal.tsx  ImportSmsModal.tsx  SmsSummaryChart.tsx
+
+components/transactions:
+AddTransactionModal.tsx  EditTransactionModal.tsx  ExportModal.tsx  TransactionFilterPanel.tsx  TransactionList.tsx  TransactionSummary.tsx
+
+components/trips:
+AddTripModal.tsx  TripChart.tsx  TripList.tsx  TripSummary.tsx
+
+components/ui:
+BaseModal.tsx  collapsible.tsx  icon-symbol.ios.tsx  icon-symbol.tsx  ScreenTitle.tsx  Typography.tsx
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ 
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ node -v
+v24.2.0
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ npm -v
+11.3.0
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ yarn -v
+bash: yarn: command not found
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ java -version
+openjdk version "21.0.9" 2025-10-21 LTS
+OpenJDK Runtime Environment Temurin-21.0.9+10 (build 21.0.9+10-LTS)
+OpenJDK 64-Bit Server VM Temurin-21.0.9+10 (build 21.0.9+10-LTS, mixed mode, sharing)
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ javac -version
+javac 21.0.9
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ adb version
+Android Debug Bridge version 1.0.41
+Version 35.0.1-11580240
+Installed as C:\Program Files\platform-tools\adb.exe
+Running on Windows 10.0.19045
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ zipalign -v
+bash: zipalign: command not found
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ apksigner --version
+bash: apksigner: command not found
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ eas --version
+★ eas-cli@16.27.0 is now available.
+To upgrade, run:
+npm install -g eas-cli
+Proceeding with outdated version.  
+
+eas-cli/16.26.0 win32-x64 node-v24.2.0
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ mkdir -p tools
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ curl -L -o tools/bundletool.jar https://github.com/google/bundletool/releases/download/1.11.0/bundletool-all-1.11.0.jar
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed  
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0 
+100 26.6M  100 26.6M    0     0  2289k      0  0:00:11  0:00:11 --:--:-- 3139k
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ ls -l '@blackatexpo__cashbook-app.jks'
+-rw-r--r-- 1 bhavi 197121 2193 Nov 14 00:38 '@blackatexpo__cashbook-app.jks'
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ echo "ANDROID_HOME = $ANDROID_HOME"
+ANDROID_HOME = 
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ echo "ANDROID_SDK_ROOT = $ANDROID_SDK_ROOT"
+ANDROID_SDK_ROOT = 
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ which adb || where.exe adb
+/c/Program Files/platform-tools/adb
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ where.exe zipalign || true
+INFO: Could not find files for the given pattern(s).
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ where.exe apksigner || true
+INFO: Could not find files for the given pattern(s).
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ where.exe zipalign.exe || true
+INFO: Could not find files for the given pattern(s).
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ where.exe apksigner.exe || true
+INFO: Could not find files for the given pattern(s).
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ ls -la "/c/Program Files/Android/Sdk" 2>/dev/null || ls -la "/c/Users/$USER/AppData/Local/Android/Sdk" 2>/dev/null || ls -la "/c/Program Files/Android" 2>/dev/null
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ ls -la "/c/Program Files/Android/Sdk/build-tools" 2>/dev/null || ls -la "/c/Users/$USER/AppData/Local/Android/Sdk/build-tools" 2>/dev/null
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ echo "ANDROID_HOME = $ANDROID_HOME"
+ANDROID_HOME = 
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ echo "ANDROID_SDK_ROOT = $ANDROID_SDK_ROOT"
+ANDROID_SDK_ROOT = 
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ which adb || where.exe adb
+/c/Program Files/platform-tools/adb
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ where.exe zipalign || true
+INFO: Could not find files for the given pattern(s).
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ where.exe apksigner || true
+INFO: Could not find files for the given pattern(s).
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ where.exe zipalign.exe || true
+INFO: Could not find files for the given pattern(s).
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ where.exe apksigner.exe || true
+INFO: Could not find files for the given pattern(s).
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ ls -la "/c/Program Files/Android/Sdk" 2>/dev/null || ls -la "/c/Users/$USER/AppData/Local/Android/Sdk" 2>/dev/null || ls -la "/c/Program Files/Android" 2>/dev/null
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ ls -la "/c/Program Files/Android/Sdk/build-tools" 2>/dev/null || ls -la "/c/Users/$USER/AppData/Local/Android/Sdk/build-tools" 2>/dev/null
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ cmd.exe /c "for /r C:\ %f in (zipalign.exe) do @echo %f" 2>/dev/null | sed -n '1,50p' || true
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ cmd.exe /c "for /r C:\ %f in (apksigner.exe) do @echo %f" 2>/dev/null | sed -n '1,50p' || true
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ 
+
+% ****After Installing Android Studio and in that Android SDK, build tools, platform tools, cmdline-tools***
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ ls ../../Users/bhavi/AppData/Local/Android/Sdk/
+build-tools/  cmdline-tools/  licenses/  platforms/  platform-tools/  sources/  system-images/
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$ ls ../../Users/bhavi/AppData/Local/Android/Sdk/*
+../../Users/bhavi/AppData/Local/Android/Sdk/build-tools:
+36.1.0/
+
+../../Users/bhavi/AppData/Local/Android/Sdk/cmdline-tools: 
+latest/
+
+../../Users/bhavi/AppData/Local/Android/Sdk/licenses:      
+android-sdk-license
+
+../../Users/bhavi/AppData/Local/Android/Sdk/platforms:     
+android-32/  android-36/
+
+../../Users/bhavi/AppData/Local/Android/Sdk/platform-tools:
+adb.exe*        AdbWinUsbApi.dll*  fastboot.exe*    libwinpthread-1.dll*  make_f2fs_casefold.exe*  mke2fs.exe*  package.xml        sqlite3.exe*
+AdbWinApi.dll*  etc1tool.exe*      hprof-conv.exe*  make_f2fs.exe*        mke2fs.conf              NOTICE.txt   source.properties
+
+../../Users/bhavi/AppData/Local/Android/Sdk/sources:
+android-32/  android-36/
+
+../../Users/bhavi/AppData/Local/Android/Sdk/system-images:
+android-36.1/
+
+bhavi@BLACK MINGW64 /c/Github/cashbook-app (v0.3-dev-smart-sms)
+$
+
+=========================================================================================
+PS C:\Github\cashbook-app> setx ANDROID_HOME "C:\Users\bhavi\AppData\Local\Android\Sdk"
+
+SUCCESS: Specified value was saved.
+PS C:\Github\cashbook-app> setx ANDROID_SDK_ROOT "C:\Users\bhavi\AppData\Local\Android\Sdk"
+
+SUCCESS: Specified value was saved.
+PS C:\Github\cashbook-app> setx PATH "$($env:PATH);C:\Users\bhavi\AppData\Local\Android\Sdk\platform-tools;C:\Users\bhavi\AppData\Local\Android\Sdk\build-tools\36.1.0"
+
+WARNING: The data being saved is truncated to 1024 characters.
+
+SUCCESS: Specified value was saved.
+PS C:\Github\cashbook-app> 
+=========================================================================================
+
+
+

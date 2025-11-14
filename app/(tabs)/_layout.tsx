@@ -1,38 +1,25 @@
 // app/(tabs)/_layout.tsx
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../contexts/ThemeContext';
-import { Platform } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function TabsLayout() {
   const { theme } = useTheme();
-  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
-      safeAreaInsets={{ bottom: 0 }}
       screenOptions={{
+        headerTitle: 'Personal Cashbook', // ✅ global header title
+        headerTitleAlign: 'center',
         headerStyle: { backgroundColor: theme.card },
         headerTintColor: theme.textDark,
-        tabBarStyle: {
-          backgroundColor: theme.card,
-          borderTopColor: theme.border,
-          height: 65 + (Platform.OS === 'android' ? insets.bottom : 0),
-          paddingBottom: 8 + (Platform.OS === 'android' ? insets.bottom : 0),
-          paddingTop: 4,
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          elevation: 10,
-        },
-        tabBarActiveTintColor: theme.tabActive,
-        tabBarInactiveTintColor: theme.tabInactive,
-        tabBarLabelStyle: { paddingBottom: 2 },
+        headerTitleStyle: { fontWeight: '700', fontSize: 18 },
+        tabBarStyle: { backgroundColor: theme.card },
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textLight,
       }}
     >
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="businesses"
         options={{
           title: 'Businesses',
@@ -40,7 +27,7 @@ export default function TabsLayout() {
             <Ionicons name="briefcase-outline" color={color} size={size} />
           ),
         }}
-      />
+      /> */}
       <Tabs.Screen
         name="books"
         options={{
@@ -51,11 +38,29 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="insights"
+        options={{
+          title: 'Insights',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="pie-chart-outline" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="trips"
+        options={{
+          title: 'Trips Log',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="bicycle-outline" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
+          title: 'More',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings-outline" color={color} size={size} />
+            <Ionicons name="layers-outline" color={color} size={size} />
           ),
         }}
       />

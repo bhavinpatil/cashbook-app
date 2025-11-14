@@ -1,5 +1,3 @@
-// app/constants/theme.ts
-
 export const COLORS = {
   primary: '#007bff',
   background: '#f8faff',
@@ -7,6 +5,7 @@ export const COLORS = {
   textLight: '#6b6b6b',
   card: '#ffffff',
   border: '#dce3f0',
+  inputBg: '#ffffff',
   success: '#28a745',
   danger: '#dc3545',
   tabActive: '#007bff',
@@ -22,8 +21,9 @@ export const DARK_THEME = {
   background: '#0d1117',
   textDark: '#e2e8f0',
   textLight: '#94a3b8',
-  card: '#1a1f29', // darker card tone that blends in
+  card: '#161b22',
   border: '#2d3748',
+  inputBg: '#0f141a',      // NEW
   success: '#22c55e',
   danger: '#ef4444',
   tabActive: '#3b82f6',
@@ -38,6 +38,7 @@ export const BLUE_THEME = {
   textLight: '#475569',
   card: '#ffffff',
   border: '#93c5fd',
+  inputBg: '#e6f2ff',      // NEW
   success: '#16a34a',
   danger: '#dc2626',
   tabActive: '#2563eb',
@@ -52,6 +53,7 @@ export const GREEN_THEME = {
   textLight: '#4b5563',
   card: '#ffffff',
   border: '#bbf7d0',
+  inputBg: '#e9fcef',      // NEW
   success: '#22c55e',
   danger: '#dc2626',
   tabActive: '#16a34a',
@@ -77,4 +79,11 @@ export const GLOBAL_STYLES = {
     fontSize: 14,
     marginBottom: 16,
   },
+};
+
+export const Colors = {
+  light: LIGHT_THEME,
+  dark: DARK_THEME,
+  blue: BLUE_THEME,
+  green: GREEN_THEME,
 };
