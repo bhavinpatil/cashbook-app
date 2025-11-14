@@ -1,3 +1,4 @@
+// eas.json
 {
   "cli": {
     "version": ">= 16.26.0",
@@ -8,7 +9,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "apk"
       }
     },
     "preview": {
@@ -16,7 +17,7 @@
     },
     "production": {
       "android": {
-        "buildType": "apk"
+        "buildType": "app-bundle"
       },
       "autoIncrement": true
     }

@@ -275,6 +275,11 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         padding: 16,
         marginBottom: 20,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
     },
     sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 10 },
     toggleRow: {

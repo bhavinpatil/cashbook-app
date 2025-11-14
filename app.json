@@ -1,7 +1,7 @@
 // app.json
 {
   "expo": {
-    "name": "Cashbook by Bhavin",
+    "name": "SmartBook by Bhavin",
     "slug": "cashbook-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -29,8 +29,8 @@
       ],
       "package": "com.bhavin.cashbook",
       "versionCode": 1,
-      "jsEngine": "hermes"
     },
+    "jsEngine": "hermes",
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
