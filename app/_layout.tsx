@@ -1,7 +1,8 @@
+// app/_layout.tsx
 import { ThemeProvider } from '../contexts/ThemeContext';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { View } from 'react-native';
 import 'react-native-reanimated';
 
@@ -25,29 +26,45 @@ function AppLayout() {
           contentStyle: { backgroundColor: theme.background },
         }}
       >
-        {/* Tabs root — hide header here */}
+        {/* ✅ Tabs root — hide header */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
-        {/* Other stack screens show header normally */}
-        <Stack.Screen
-          name="businesses/[businessId]/books"
-          options={({ route }) => ({
-            title: (route.params as { businessName?: string })?.businessName || 'Books',
-          })}
-        />
-
+        {/* ✅ Transactions, Insights, etc. */}
         <Stack.Screen
           name="transactions/index"
-          options={({ route }) => ({
-            title: (route.params as { bookName?: string })?.bookName || 'Transactions',
-          })}
+          options={{
+            title: 'Personal Cashbook', // ✅ Fixed title
+          }}
         />
-
         <Stack.Screen
           name="insights/index"
-          options={({ route }) => ({
-            title: (route.params as { bookName?: string })?.bookName || 'Insights',
-          })}
+          options={{
+            title: 'Personal Cashbook', // ✅ Fixed title
+          }}
+        />
+        <Stack.Screen
+          name="investments/index"
+          options={{
+            title: 'Personal Cashbook', // ✅ Fixed title
+          }}
+        />
+        <Stack.Screen
+          name="trips/index"
+          options={{
+            title: 'Personal Cashbook', // ✅ Fixed title
+          }}
+        />
+        <Stack.Screen
+          name="settings/index"
+          options={{
+            title: 'Personal Cashbook', // ✅ Fixed title
+          }}
+        />
+        <Stack.Screen
+          name="sms/index"
+          options={{
+            title: 'Personal Cashbook', // ✅ Fixed title
+          }}
         />
       </Stack>
     </View>

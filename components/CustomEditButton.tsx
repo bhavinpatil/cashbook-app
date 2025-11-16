@@ -1,7 +1,12 @@
 // components/CustomEditButton.tsx
 import React from 'react';
 import { Pressable, Text, StyleSheet, ViewStyle } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
+// inside component
+import { RADIUS, TYPOGRAPHY, SHADOW } from '@/constants/design';
+
+// then use SHADOW.soft for shadow and borderRadius: RADIUS.sm etc.
+
 
 interface CustomEditButtonProps {
   title?: string;

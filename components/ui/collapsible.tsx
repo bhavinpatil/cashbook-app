@@ -1,3 +1,4 @@
+
 import { PropsWithChildren, useState } from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 
@@ -21,7 +22,7 @@ export function Collapsible({ children, title }: PropsWithChildren & { title: st
           name="chevron.right"
           size={18}
           weight="medium"
-          color={theme === 'light' ? Colors.light.icon : Colors.dark.icon}
+          color={theme === 'light' ? Colors.light.textDark : Colors.dark.textLight}
           style={{ transform: [{ rotate: isOpen ? '90deg' : '0deg' }] }}
         />
 

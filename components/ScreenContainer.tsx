@@ -1,28 +1,14 @@
 // components/ScreenContainer.tsx
 import React from 'react';
 import { SafeAreaView, View, StyleSheet } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { SPACING } from '@/constants/design';
 
-interface Props {
-  children: React.ReactNode;
-  hasFloatingButtons?: boolean;
-}
-
-export default function ScreenContainer({ children, hasFloatingButtons = false }: Props) {
+export default function ScreenContainer({ children, hasFloatingButtons = false }: { children: React.ReactNode; hasFloatingButtons?: boolean; }) {
   const { theme } = useTheme();
-
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <View
-        style={[
-          styles.container,
-          {
-            backgroundColor: theme.background,
-            padding: 16,
-            paddingBottom: hasFloatingButtons ? 100 : 40,
-          },
-        ]}
-      >
+      <View style={[styles.container, { padding: SPACING.lg, paddingBottom: hasFloatingButtons ? 120 : SPACING.xl }]}>
         {children}
       </View>
     </SafeAreaView>
