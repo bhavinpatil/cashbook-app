@@ -11,10 +11,31 @@ export const useSmsTransactions = (monthKey?: string) => {
   const [loading, setLoading] = useState(true);
   const key = monthKey || getMonthKey();
 
+  const sanitizeTx = (t: SmsTransaction): SmsTransaction => ({
+    ...t,
+    amount: round2(t.amount),     // clean floats
+  });
+
   useEffect(() => {
     (async () => {
       const saved = await AsyncStorage.getItem(`sms_transactions_${key}`);
-      if (saved) setTransactions(JSON.parse(saved));
+      if (saved) {
+        const parsed: SmsTransaction[] = JSON.parse(saved);
+
+        // 🔥 sanitize all loaded values
+        const cleaned = parsed.map(sanitizeTx);
+
+        setTransactions(cleaned);
+
+        // 🔥 also re-save cleaned version so future loads are correct
+        await AsyncStorage.setItem(
+          `sms_transactions_${key}`,
+          JSON.stringify(cleaned)
+        );
+
+      } else {
+        setTransactions([]);
+      }
       setLoading(false);
     })();
   }, [key]);
@@ -78,7 +99,9 @@ export const useSmsTransactions = (monthKey?: string) => {
 
   const updateTransaction = async (updatedTx: SmsTransaction) => {
     const updated = transactions.map((t) =>
-      t.id === updatedTx.id ? { ...updatedTx, amount: round2(updatedTx.amount) } : t
+      t.id === updatedTx.id
+        ? { ...updatedTx, amount: round2(updatedTx.amount) }
+        : { ...t, amount: round2(t.amount) }   // ✅ also sanitize the untouched ones
     );
     setTransactions(updated);
     await saveToStorage(updated);
@@ -100,13 +123,17 @@ export const useSmsTransactions = (monthKey?: string) => {
 
   const getTotals = () => {
     const credit = round2(
-      transactions.filter(t => t.type === 'Credit')
-        .reduce((a, b) => a + round2(b.amount), 0)
+      transactions
+        .filter(t => t.type === 'Credit')
+        .reduce((sum, t) => sum + round2(t.amount), 0)
     );
+
     const debit = round2(
-      transactions.filter(t => t.type === 'Debit')
-        .reduce((a, b) => a + round2(b.amount), 0)
+      transactions
+        .filter(t => t.type === 'Debit')
+        .reduce((sum, t) => sum + round2(t.amount), 0)
     );
+
     return {
       credit,
       debit,

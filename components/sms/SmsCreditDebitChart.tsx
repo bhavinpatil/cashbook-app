@@ -8,68 +8,93 @@ import type { SmsTransaction } from '@/types/sms';
 const screenWidth = Dimensions.get('window').width;
 const round2 = (n: number) => Number(Number(n).toFixed(2));
 
-
 export default function SmsCreditDebitChart({ transactions }: { transactions: SmsTransaction[] }) {
   const { theme } = useTheme();
 
+  // Calculate totals
   const totals = useMemo(() => {
     let credit = 0;
     let debit = 0;
+
     transactions.forEach((t) => {
       if (t.type === 'Credit') credit += round2(t.amount);
       else debit += round2(t.amount);
     });
-    return { credit, debit };
+
+    const balance = round2(credit - debit);
+    return { credit: round2(credit), debit: round2(debit), balance };
   }, [transactions]);
 
-  const data = [
+  const { credit, debit, balance } = totals;
+
+  // Use only two values for pie chart:
+  const chartData = [
     {
-      name: 'Credit',
-      value: totals.credit,
-      color: theme.success || '#4CAF50',
-      legendFontColor: theme.textDark,
-      legendFontSize: 13,
-    },
-    {
-      name: 'Debit',
-      value: totals.debit,
+      name: 'Spent',
+      population: debit,
       color: theme.danger || '#F44336',
       legendFontColor: theme.textDark,
-      legendFontSize: 13,
+      legendFontSize: 14,
     },
-  ].filter(d => d.value > 0);
+    {
+      name: 'Remaining',
+      population: balance < 0 ? 0 : balance, // prevent negative slice
+      color: theme.success || '#4CAF50',
+      legendFontColor: theme.textDark,
+      legendFontSize: 14,
+    },
+  ].filter((d) => d.population > 0);
+
+  const fmt = (v: number) =>
+    v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
     <View style={[styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
-      <Text style={[styles.title, { color: theme.textDark }]}>Credit vs Debit</Text>
 
-      {data.length > 0 ? (
-        <>
-          <View style={{ alignItems: 'center' }}>
-            <PieChart
-              data={data.map(d => ({ name: d.name, population: d.value, color: d.color, legendFontColor: d.legendFontColor, legendFontSize: d.legendFontSize }))}
-              width={Math.min(screenWidth - 80, 420)}
-              height={220}
-              accessor="population"
-              backgroundColor="transparent"
-              paddingLeft="0"
-              chartConfig={{ color: () => theme.primary }}
-              absolute
-            />
-            <View style={styles.legend}>
-              {data.map((d, i) => (
-                <View key={i} style={styles.legendRow}>
-                  <View style={[styles.dot, { backgroundColor: d.color }]} />
-                  <Text style={[styles.legendText, { color: theme.textDark }]}>
-                    {d.name} — ₹{d.value.toLocaleString()}
-                  </Text>
-                </View>
-              ))}
+      {/* Header hybrid summary */}
+      <Text style={[styles.headerText, { color: theme.textLight }]}>
+        Total Income — <Text style={{ color: theme.primary, fontWeight: '700' }}>₹{fmt(credit)}</Text>
+      </Text>
+
+      <Text style={[styles.title, { color: theme.textDark }]}>Spent vs Remaining</Text>
+
+      {chartData.length > 0 ? (
+        <View style={{ alignItems: 'center' }}>
+
+          {/* Pie Chart */}
+          <PieChart
+            data={chartData}
+            width={Math.min(screenWidth - 80, 420)}
+            height={220}
+            accessor="population"
+            backgroundColor="transparent"
+            paddingLeft="0"
+            chartConfig={{ color: () => theme.primary }}
+            absolute
+          />
+
+          {/* Legend */}
+          <View style={styles.legend}>
+            <View style={styles.legendRow}>
+              <View style={[styles.dot, { backgroundColor: theme.danger }]} />
+              <Text style={[styles.legendText, { color: theme.textDark }]}>
+                Spent — ₹{fmt(debit)}
+              </Text>
+            </View>
+
+            <View style={styles.legendRow}>
+              <View style={[styles.dot, { backgroundColor: theme.success }]} />
+              <Text style={[styles.legendText, { color: theme.textDark }]}>
+                Remaining — ₹{fmt(balance)}
+              </Text>
             </View>
           </View>
-        </>
+
+        </View>
       ) : (
-        <Text style={{ color: theme.textLight, textAlign: 'center' }}>No credit/debit data</Text>
+        <Text style={{ color: theme.textLight, textAlign: 'center' }}>
+          No SMS data found
+        </Text>
       )}
     </View>
   );
@@ -77,9 +102,10 @@ export default function SmsCreditDebitChart({ transactions }: { transactions: Sm
 
 const styles = StyleSheet.create({
   card: { padding: 12, borderRadius: 12, borderWidth: 1, marginBottom: 16 },
-  title: { fontSize: 15, fontWeight: '700', marginBottom: 10, textAlign: 'center' },
-  legend: { marginTop: 8, paddingHorizontal: 10 },
-  legendRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  title: { fontSize: 16, fontWeight: '700', marginBottom: 6, textAlign: 'center' },
+  headerText: { fontSize: 14, textAlign: 'center', marginBottom: 4 },
+  legend: { marginTop: 10 },
+  legendRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6, justifyContent: 'center' },
   dot: { width: 12, height: 12, borderRadius: 6, marginRight: 8 },
-  legendText: { fontSize: 13 },
+  legendText: { fontSize: 14, fontWeight: '500' },
 });

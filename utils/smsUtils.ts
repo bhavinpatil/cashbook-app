@@ -15,13 +15,19 @@ export const parseSmsMessage = (
   sender: string,
   date: string
 ): SmsTransaction | null => {
+
+  const round2 = (n: number) => Number(Number(n).toFixed(2));
+
   const text = msg.replace(/\s+/g, ' ').trim();
 
-  // Extract amount token (supports ₹, Rs, INR etc)
+  // Extract amount (₹, Rs, INR)
   const amountMatch = msg.match(/(?:rs\.?|inr|₹)\s*([0-9,]+(?:\.\d{1,2})?)/i);
-  const amount = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, '')) : 0;
+  const extracted = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, '')) : 0;
 
-  // Detect transaction type
+  // ❗ NEW: Round amount properly
+  const amount = round2(extracted);
+
+  // Detect credit / debit
   let type: 'Credit' | 'Debit' | 'Unknown' = 'Unknown';
   if (/credited|received|transfer from|added/i.test(msg)) type = 'Credit';
   else if (/debited|sent via upi|trf to|withdrawn|payment/i.test(msg)) type = 'Debit';
@@ -35,7 +41,7 @@ export const parseSmsMessage = (
     sender,
     message: text,
     date,
-    amount,
+    amount,          // ✅ cleaned amount
     type,
     category,
     labeled: !!category,
