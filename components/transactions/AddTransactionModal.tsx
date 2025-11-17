@@ -20,6 +20,8 @@ import {
 import { Transaction } from '@/types/types';
 import { eventBus } from '@/contexts/EventBus';
 
+const round2 = (n: number) => Number(Number(n).toFixed(2));
+
 interface Props {
     visible: boolean;
     onClose: () => void;
@@ -151,7 +153,7 @@ export default function AddTransactionModal({
             id: randomUUID(),
             bookId, // ✅ use the real book ID
             type,
-            amount: Number(amount),
+            amount: round2(Number(amount)),
             description,
             date: date.toISOString(),
             category: category.trim() || undefined,

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { SmsTransaction } from '@/types/sms';
 import { getMonthKey, autoDetectCategory } from '@/utils/smsUtils';
 
+const round2 = (n: number) => Number(Number(n).toFixed(2));
+
 export const useSmsTransactions = (monthKey?: string) => {
   const [transactions, setTransactions] = useState<SmsTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +33,9 @@ export const useSmsTransactions = (monthKey?: string) => {
     if (duplicate) return;
 
     const detected = autoDetectCategory(tx.message);
-    const updatedTx = detected ? { ...tx, category: detected, labeled: true } : tx;
+    const updatedTx = detected
+      ? { ...tx, amount: round2(tx.amount), category: detected, labeled: true }
+      : { ...tx, amount: round2(tx.amount) };
 
     const updated = [updatedTx, ...current];
     await saveToStorage(updated, targetKey);
@@ -49,11 +53,17 @@ export const useSmsTransactions = (monthKey?: string) => {
     const toAdd: SmsTransaction[] = [];
 
     for (const tx of txs) {
-      const keyStr = `${tx.message}||${tx.amount}||${tx.date}`;
+      const amt = round2(tx.amount);
+      const keyStr = `${tx.message}||${amt}||${tx.date}`;
       if (existingSet.has(keyStr)) continue;
       // auto-detect category if missing
       const detected = tx.category ?? autoDetectCategory(tx.message);
-      const finalTx = detected ? { ...tx, category: detected, labeled: true } : tx;
+      const finalTx = {
+        ...tx,
+        amount: amt,
+        category: detected,
+        labeled: !!detected,
+      };
       toAdd.push(finalTx);
       existingSet.add(keyStr);
     }
@@ -67,7 +77,9 @@ export const useSmsTransactions = (monthKey?: string) => {
   };
 
   const updateTransaction = async (updatedTx: SmsTransaction) => {
-    const updated = transactions.map((t) => (t.id === updatedTx.id ? updatedTx : t));
+    const updated = transactions.map((t) =>
+      t.id === updatedTx.id ? { ...updatedTx, amount: round2(updatedTx.amount) } : t
+    );
     setTransactions(updated);
     await saveToStorage(updated);
   };
@@ -87,9 +99,19 @@ export const useSmsTransactions = (monthKey?: string) => {
   };
 
   const getTotals = () => {
-    const credit = transactions.filter((t) => t.type === 'Credit').reduce((a, b) => a + b.amount, 0);
-    const debit = transactions.filter((t) => t.type === 'Debit').reduce((a, b) => a + b.amount, 0);
-    return { credit, debit, balance: credit - debit };
+    const credit = round2(
+      transactions.filter(t => t.type === 'Credit')
+        .reduce((a, b) => a + round2(b.amount), 0)
+    );
+    const debit = round2(
+      transactions.filter(t => t.type === 'Debit')
+        .reduce((a, b) => a + round2(b.amount), 0)
+    );
+    return {
+      credit,
+      debit,
+      balance: round2(credit - debit),
+    };
   };
 
   return {

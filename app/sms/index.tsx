@@ -9,18 +9,23 @@ import {
   StyleSheet,
   Platform,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSmsTransactions } from '@/hooks/useSmsTransactions';
 import { getMonthKey } from '@/utils/smsUtils';
-import SmsSummaryChart from '@/components/sms/SmsSummaryChart';
+import SmsChartsTabs from '@/components/sms/SmsChartsTabs';
 import { SmsTransaction } from '@/types/sms';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ImportSmsModal from '@/components/sms/ImportSmsModal';
 import FilterModal from '@/components/sms/FilterModal';
 import { requestReadSmsPermission } from '@/utils/androidPermissions';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import CustomCategoryModal from '@/components/sms/CustomCategoryModal';
+import { useSmsCategories } from '@/hooks/useSmsCategories';
+
+const round2 = (n: number) => Number(Number(n).toFixed(2));
 
 export default function SmsTransactionsScreen() {
   const { theme } = useTheme();
@@ -28,8 +33,8 @@ export default function SmsTransactionsScreen() {
 
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
   const currentMonth = getMonthKey(currentDate);
+  const { allCategories, addCategory: addNewCategory } = useSmsCategories();
 
-  // NOTE: include deleteTransaction from hook
   const {
     transactions: monthTransactions,
     getTotals,
@@ -50,6 +55,9 @@ export default function SmsTransactionsScreen() {
   const [filters, setFilters] = useState<any>({});
   const [insightsMode, setInsightsMode] = useState<'Daily' | 'Monthly'>('Daily');
 
+  // custom category modal
+  const [customCatVisible, setCustomCatVisible] = useState(false);
+
   // helper same day
   const isSameDay = (a: Date, b: Date) =>
     a.getFullYear() === b.getFullYear() &&
@@ -63,7 +71,7 @@ export default function SmsTransactionsScreen() {
   const filteredTransactions = visibleList
     .filter((t) => (filters.type && filters.type !== 'All' ? t.type === filters.type : true))
     .sort((a, b) => {
-      if (filters.sort === 'Amount') return b.amount - a.amount;
+      if (filters.sort === 'Amount') return round2(b.amount) - round2(a.amount);
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
 
@@ -179,6 +187,15 @@ export default function SmsTransactionsScreen() {
     );
   };
 
+  // when custom category saved
+  const onSaveCustomCategory = (cat: string) => {
+    if (!selectedItem) return;
+    addNewCategory(cat);
+    updateCategory(selectedItem.id, cat);
+    setSelectedItem(null);
+    setCustomCatVisible(false);
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header */}
@@ -222,7 +239,7 @@ export default function SmsTransactionsScreen() {
       {/* Summary */}
       <View style={[styles.summary, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <Text style={[styles.summaryText, { color: theme.success }]}>
-          Credit: ₹{totals.credit.toFixed(2)}
+          Credit: ₹{round2(totals.credit).toFixed(2)}
         </Text>
         <Text style={[styles.summaryText, { color: theme.danger }]}>
           Debit: ₹{totals.debit.toFixed(2)}
@@ -258,8 +275,8 @@ export default function SmsTransactionsScreen() {
         </View>
       </View>
 
-      {/* Chart */}
-      <SmsSummaryChart transactions={chartTransactions} />
+      {/* Charts Tabs (Category / Credit-Debit) */}
+      <SmsChartsTabs transactions={chartTransactions} />
 
       {/* Transactions List */}
       <FlatList
@@ -298,18 +315,31 @@ export default function SmsTransactionsScreen() {
           <View style={[styles.modalCard, { backgroundColor: theme.card }]}>
             <Text style={[styles.modalTitle, { color: theme.textDark }]}>Categorize Transaction</Text>
 
-            {['Groceries', 'Bills', 'Fuel', 'Travel', 'Food', 'Other'].map((cat) => (
-              <TouchableOpacity
-                key={cat}
-                onPress={() => {
-                  updateCategory(selectedItem.id, cat);
-                  setSelectedItem(null);
-                }}
-                style={[styles.catButton, { borderColor: theme.border, backgroundColor: theme.card }]}
-              >
-                <Text style={{ color: theme.textDark }}>{cat}</Text>
-              </TouchableOpacity>
-            ))}
+            <ScrollView style={{ maxHeight: 300 }}>
+              {allCategories.map((cat) => (
+                <TouchableOpacity
+                  key={`cat-${cat}`}
+                  onPress={() => {
+                    updateCategory(selectedItem.id, cat);
+                    setSelectedItem(null);
+                  }}
+                  style={[styles.catButton, { borderColor: theme.border, backgroundColor: theme.card }]}
+                >
+                  <Text style={{ color: theme.textDark }}>{cat}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* Add Custom Category */}
+            <TouchableOpacity
+              onPress={() => {
+                setCustomCatVisible(true);
+              }}
+              style={[styles.customBtn, { borderColor: theme.border }]}
+            >
+              <Ionicons name="add-circle-outline" size={18} color={theme.textDark} />
+              <Text style={{ color: theme.textDark, marginLeft: 8, fontWeight: '600' }}>Add Custom Category</Text>
+            </TouchableOpacity>
 
             {/* Delete full-width red button */}
             <TouchableOpacity
@@ -325,6 +355,13 @@ export default function SmsTransactionsScreen() {
           </View>
         </View>
       )}
+
+      {/* Custom category modal */}
+      <CustomCategoryModal
+        visible={customCatVisible}
+        onClose={() => setCustomCatVisible(false)}
+        onSave={onSaveCustomCategory}
+      />
 
       {/* Import Modal */}
       <ImportSmsModal
@@ -389,7 +426,7 @@ const styles = StyleSheet.create({
   modalCard: { width: '86%', borderRadius: 16, padding: 18, elevation: 6 },
   modalTitle: { fontSize: 18, fontWeight: '700', textAlign: 'center', marginBottom: 12 },
   catButton: { borderWidth: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center', marginVertical: 6 },
-
+  customBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 10, borderWidth: 1, marginTop: 8 },
   // Delete full-width button
   deleteBtn: {
     marginTop: 12,

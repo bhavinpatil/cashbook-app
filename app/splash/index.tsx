@@ -20,7 +20,7 @@ export default function Splash() {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../../assets/images/cashbook-splash-icon.png')}
+        source={require('../../assets/images/splash-icon.png')}
         style={{ width: 120, height: 120 }}
         resizeMode="contain"
       />
