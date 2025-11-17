@@ -1,3 +1,4 @@
+// hooks/useSmartReload.ts
 import { useCallback, useEffect } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { AppState, AppStateStatus } from 'react-native';
