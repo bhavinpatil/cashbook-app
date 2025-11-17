@@ -45,3 +45,8 @@ app-example
 final.zip
 apk-output
 .local_build.log
+builds/
+output_apks/
+app.apks
+*.keystore
+*.jks
