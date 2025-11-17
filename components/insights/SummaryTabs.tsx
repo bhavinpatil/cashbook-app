@@ -5,6 +5,18 @@ import dayjs, { Dayjs } from 'dayjs';
 import { Transaction } from '@/types/types';
 import { useTheme } from '@/contexts/ThemeContext';
 
+const round2 = (n: number) => Number(Number(n).toFixed(2));
+const fmt = (n: number) => {
+  try {
+    return n.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  } catch {
+    return round2(n).toFixed(2);
+  }
+};
+
 interface SummaryTabsProps {
   activeTab: 'spends' | 'incoming';
   setActiveTab: (t: 'spends' | 'incoming') => void;
@@ -24,16 +36,22 @@ export default function SummaryTabs({
     dayjs(tx.date).isSame(currentMonth, 'month')
   );
 
-  const spendsTotal = monthTx
-    .filter(tx => tx.type === 'debit')
-    .reduce((sum, tx) => sum + tx.amount, 0);
+  // Rounded totals
+  const spendsTotal = round2(
+    monthTx.filter(tx => tx.type === 'debit').reduce((sum, tx) => sum + round2(tx.amount), 0)
+  );
 
-  const incomeTotal = monthTx
-    .filter(tx => tx.type === 'credit')
-    .reduce((sum, tx) => sum + tx.amount, 0);
+  const incomeTotal = round2(
+    monthTx.filter(tx => tx.type === 'credit').reduce((sum, tx) => sum + round2(tx.amount), 0)
+  );
 
   return (
-    <View style={[styles.summaryTabs, { backgroundColor: theme.card, borderColor: theme.border }]}>
+    <View
+      style={[
+        styles.summaryTabs,
+        { backgroundColor: theme.card, borderColor: theme.border },
+      ]}
+    >
       {(['spends', 'incoming'] as const).map(tab => (
         <TouchableOpacity
           key={tab}
@@ -53,7 +71,7 @@ export default function SummaryTabs({
               { color: tab === 'spends' ? '#e63946' : '#2a9d8f' },
             ]}
           >
-            ₹{tab === 'spends' ? spendsTotal : incomeTotal}
+            ₹{fmt(tab === 'spends' ? spendsTotal : incomeTotal)}
           </Text>
         </TouchableOpacity>
       ))}

@@ -1,3 +1,4 @@
+// components/insights/IncomingChart.tsx
 import React, { useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { LineChart, BarChart } from 'react-native-chart-kit';
@@ -5,6 +6,19 @@ import dayjs from 'dayjs';
 import { useTheme } from '@/contexts/ThemeContext';
 
 const screenWidth = Dimensions.get('window').width;
+
+// --- Helpers ---
+const round2 = (n: number) => Number(Number(n).toFixed(2));
+const fmt = (n: number) => {
+  try {
+    return n.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  } catch {
+    return round2(n).toFixed(2);
+  }
+};
 
 export default function IncomingChart({
   transactions,
@@ -16,12 +30,16 @@ export default function IncomingChart({
   const [isDaily, setIsDaily] = useState(true);
   const { theme } = useTheme();
 
-  // Filter current & previous month
+  // Filter data for current month
   const monthTx = useMemo(
-    () => transactions.filter(tx => dayjs(tx.date).isSame(currentMonth, 'month')),
+    () =>
+      transactions.filter(tx =>
+        dayjs(tx.date).isSame(currentMonth, 'month')
+      ),
     [transactions, currentMonth]
   );
 
+  // Previous month data
   const prevMonthTx = useMemo(
     () =>
       transactions.filter(tx =>
@@ -33,63 +51,78 @@ export default function IncomingChart({
   const daysInMonth = currentMonth.daysInMonth();
   const labels = Array.from({ length: daysInMonth }, (_, i) => String(i + 1));
 
-  // Daily + cumulative income
+  // --- Daily credit totals ---
   const dailyCredit = Array(daysInMonth).fill(0);
 
   monthTx.forEach(tx => {
-    const day = dayjs(tx.date).date() - 1;
-    if (tx.type === 'credit') dailyCredit[day] += tx.amount;
+    if (tx.type === 'credit') {
+      const index = dayjs(tx.date).date() - 1;
+      dailyCredit[index] = round2(dailyCredit[index] + round2(tx.amount));
+    }
   });
 
-  const cumulativeCredit = dailyCredit.reduce((acc, val, i) => {
-    acc[i] = i === 0 ? val : acc[i - 1] + val;
-    return acc;
-  }, [] as number[]);
+  // --- Cumulative credit ---
+  const cumulativeCredit: number[] = [];
+  dailyCredit.forEach((v, i) => {
+    cumulativeCredit[i] = round2(v + (i > 0 ? cumulativeCredit[i - 1] : 0));
+  });
 
+  // Show only till today
   const today = dayjs();
-  const isCurrentMonth = today.isSame(currentMonth, 'month');
-  const daysToShow = isCurrentMonth ? today.date() : daysInMonth;
+  const isCurrent = today.isSame(currentMonth, 'month');
+  const daysToShow = isCurrent ? today.date() : daysInMonth;
 
   const visibleData = cumulativeCredit.slice(0, daysToShow);
   const visibleLabels = labels.slice(0, daysToShow);
 
-  const incomeTotal = visibleData[visibleData.length - 1] || 0;
+  const incomeTotal = visibleData.length > 0 ? visibleData[visibleData.length - 1] : 0;
 
-  const lastMonthIncome = prevMonthTx
-    .filter(tx => tx.type === 'credit')
-    .reduce((sum, tx) => sum + tx.amount, 0);
+  // --- Previous month income ---
+  const lastMonthIncome = round2(
+    prevMonthTx
+      .filter(tx => tx.type === 'credit')
+      .reduce((sum, tx) => sum + round2(tx.amount), 0)
+  );
 
-  // Last 6 months graph
+  // --- Last 6 months graph ---
   const monthlyLabels: string[] = [];
   const monthlyIncome: number[] = [];
 
   for (let i = 5; i >= 0; i--) {
     const m = currentMonth.subtract(i, 'month');
-    const total = transactions
-      .filter(tx => dayjs(tx.date).isSame(m, 'month') && tx.type === 'credit')
-      .reduce((sum, tx) => sum + tx.amount, 0);
+
+    const total = round2(
+      transactions
+        .filter(tx => dayjs(tx.date).isSame(m, 'month') && tx.type === 'credit')
+        .reduce((sum, tx) => sum + round2(tx.amount), 0)
+    );
 
     monthlyLabels.push(m.format('MMM'));
     monthlyIncome.push(total);
   }
 
+  // Nice Y-axis formatting
   const formatYAxis = (value: any) => {
     const num = Number(value);
     if (isNaN(num)) return '0';
+
     if (num >= 100000) return `${(num / 100000).toFixed(1)}L`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toFixed(0);
   };
 
-  // Chart Config — theme friendly
   const chartConfig = {
     backgroundColor: theme.card,
     backgroundGradientFrom: theme.card,
     backgroundGradientTo: theme.card,
     decimalPlaces: 0,
-    color: (opacity = 1) => theme.textDark + Math.floor(opacity * 255).toString(16),
+    color: () => theme.textDark,
     labelColor: () => theme.textLight,
-    propsForBackgroundLines: { strokeDasharray: '4', strokeWidth: 0.6, stroke: theme.border },
+    propsForBackgroundLines: {
+      strokeDasharray: '4',
+      strokeWidth: 0.6,
+      stroke: theme.border,
+    },
   };
 
   return (
@@ -101,37 +134,35 @@ export default function IncomingChart({
             This month so far
           </Text>
           <Text style={[styles.valueText, { color: theme.success }]}>
-            ₹{incomeTotal.toFixed(0)}
+            ₹{fmt(incomeTotal)}
           </Text>
         </View>
 
         <View style={styles.comparisonBox}>
           <Text style={[styles.smallText, { color: theme.textLight }]}>Last month</Text>
           <Text style={[styles.valueText, { color: theme.textDark }]}>
-            ₹{formatYAxis(lastMonthIncome)}
+            ₹{fmt(lastMonthIncome)}
           </Text>
         </View>
       </View>
 
-      {/* Chart Card */}
+      {/* Card */}
       <View style={[styles.graphCard, { backgroundColor: theme.card }]}>
         <Text style={[styles.sectionTitle, { color: theme.textDark }]}>
           {isDaily ? 'Daily Incoming Overview' : 'Monthly Incoming Overview'}
         </Text>
 
-        {/* DAILY CHART */}
+        {/* Daily Line Chart */}
         {isDaily ? (
           <LineChart
             data={{
               labels: visibleLabels,
-              datasets: [
-                { data: visibleData, color: () => theme.success, strokeWidth: 2 },
-              ],
+              datasets: [{ data: visibleData, color: () => theme.success, strokeWidth: 2 }],
             }}
             width={screenWidth - 60}
             height={260}
             yAxisLabel="₹"
-            formatYLabel={(v) => formatYAxis(Number(v))}
+            formatYLabel={v => formatYAxis(Number(v))}
             chartConfig={chartConfig}
             withInnerLines
             bezier
@@ -139,7 +170,7 @@ export default function IncomingChart({
             style={{ borderRadius: 12 }}
           />
         ) : (
-          // MONTHLY BAR CHART
+          /* Monthly Bar Chart */
           <BarChart
             data={{
               labels: monthlyLabels,
@@ -148,8 +179,8 @@ export default function IncomingChart({
             width={screenWidth - 60}
             height={260}
             yAxisLabel="₹"
-            yAxisSuffix=""
             fromZero
+            yAxisSuffix=''
             withInnerLines
             chartConfig={{
               ...chartConfig,
@@ -160,7 +191,7 @@ export default function IncomingChart({
           />
         )}
 
-        {/* Toggle Buttons */}
+        {/* Toggle */}
         <View style={styles.toggleRow}>
           <TouchableOpacity
             onPress={() => setIsDaily(true)}

@@ -1,7 +1,7 @@
 // app.json
 {
   "expo": {
-    "name": "SmartBook by Bhavin",
+    "name": "LedgerForce by Bhavin",
     "slug": "cashbook-app",
     "version": "1.0.0",
     "orientation": "portrait",
