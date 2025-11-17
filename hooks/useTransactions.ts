@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { Transaction } from '@/types/types';
 import { eventBus } from '@/contexts/EventBus';
 
+const round2 = (n: number) => Number(Number(n).toFixed(2));
+
 export const useTransactions = (bookId: string) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +25,11 @@ export const useTransactions = (bookId: string) => {
   useEffect(() => {
     if (!loading && bookId) {
       (async () => {
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+        const cleaned = transactions.map(t => ({
+          ...t,
+          amount: round2(t.amount),
+        }));
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
         eventBus.emitUpdate('transactions'); // ✅ fire event after actual save
       })();
     }
@@ -37,7 +43,10 @@ export const useTransactions = (bookId: string) => {
   }, [transactions]);
 
   const addTransaction = (tx: Transaction) => {
-    setTransactions((prev) => [tx, ...prev]);
+    setTransactions(prev => [
+      { ...tx, amount: round2(tx.amount) },
+      ...prev,
+    ]);
     eventBus.emitUpdate('transactions'); // ✅
   };
 
@@ -47,8 +56,12 @@ export const useTransactions = (bookId: string) => {
   };
 
   const updateTransaction = (updated: Transaction) => {
-    setTransactions((prev) =>
-      prev.map((t) => (t.id === updated.id ? updated : t))
+    setTransactions(prev =>
+      prev.map(t =>
+        t.id === updated.id
+          ? { ...updated, amount: round2(updated.amount) }
+          : t
+      )
     );
     eventBus.emitUpdate('transactions'); // ✅
   };

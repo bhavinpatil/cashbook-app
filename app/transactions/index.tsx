@@ -15,6 +15,8 @@ import TransactionSummary from '@/components/transactions/TransactionSummary';
 import { useTransactions } from '@/hooks/useTransactions';
 import { Transaction } from '@/types/types';
 
+const round2 = (n: number) => Number(Number(n).toFixed(2));
+
 export default function TransactionsScreen() {
   const { bookId, bookName } = useLocalSearchParams();
   const router = useRouter();
@@ -44,13 +46,17 @@ export default function TransactionsScreen() {
     return <Text style={{ marginTop: 50, textAlign: 'center' }}>No book selected.</Text>;
   }
 
-  const totalCredit = transactions
-    .filter((t) => t.type === 'credit')
-    .reduce((sum, t) => sum + t.amount, 0);
-  const totalDebit = transactions
-    .filter((t) => t.type === 'debit')
-    .reduce((sum, t) => sum + t.amount, 0);
-  const balance = totalCredit - totalDebit;
+  const totalCredit = round2(
+    transactions.filter(t => t.type === 'credit')
+      .reduce((sum, t) => sum + round2(t.amount), 0)
+  );
+
+  const totalDebit = round2(
+    transactions.filter(t => t.type === 'debit')
+      .reduce((sum, t) => sum + round2(t.amount), 0)
+  );
+
+  const balance = round2(totalCredit - totalDebit);
 
   const applyFilters = (options: any) => setFilters(options);
   const resetFilters = () => setFilters(null);
