@@ -16,6 +16,19 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 const screenWidth = Dimensions.get('window').width;
 
+// --- Helpers ---
+const round2 = (n: number) => Number(Number(n).toFixed(2));
+const fmt = (n: number) => {
+    try {
+        return n.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+    } catch {
+        return round2(n).toFixed(2);
+    }
+};
+
 interface Props {
     transactions: Transaction[];
     currentMonth: Dayjs;
@@ -37,16 +50,19 @@ export default function SpendsChart({ transactions, currentMonth }: Props) {
         })();
     }, []);
 
-    // Filter current + previous month
+    // Filtered lists
     const monthTx = useMemo(
-        () => transactions.filter(tx => dayjs(tx.date).isSame(currentMonth, 'month')),
+        () =>
+            transactions.filter((tx) =>
+                dayjs(tx.date).isSame(currentMonth, "month")
+            ),
         [transactions, currentMonth]
     );
 
     const prevMonthTx = useMemo(
         () =>
-            transactions.filter(tx =>
-                dayjs(tx.date).isSame(currentMonth.subtract(1, 'month'), 'month')
+            transactions.filter((tx) =>
+                dayjs(tx.date).isSame(currentMonth.subtract(1, "month"), "month")
             ),
         [transactions, currentMonth]
     );
@@ -54,52 +70,72 @@ export default function SpendsChart({ transactions, currentMonth }: Props) {
     const daysInMonth = currentMonth.daysInMonth();
     const labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
 
-    // Daily debit totals
+    // --- Daily Debit Totals ---
     const dailyDebit = Array(daysInMonth).fill(0);
-    monthTx.forEach(tx => {
-        if (tx.type === 'debit') {
+
+    monthTx.forEach((tx) => {
+        if (tx.type === "debit") {
             const dayIndex = dayjs(tx.date).date() - 1;
-            dailyDebit[dayIndex] += tx.amount;
+            dailyDebit[dayIndex] = round2(dailyDebit[dayIndex] + round2(tx.amount));
         }
     });
 
-    // Cumulative debit
+    // --- Cumulative Debit ---
     const cumulativeDebit: number[] = [];
     dailyDebit.forEach((v, i) => {
-        cumulativeDebit[i] = v + (i > 0 ? cumulativeDebit[i - 1] : 0);
+        cumulativeDebit[i] = round2(v + (i > 0 ? cumulativeDebit[i - 1] : 0));
     });
 
-    // Trim chart to today's date
     const today = dayjs();
-    const isCurrentMonth = today.isSame(currentMonth, 'month');
+    const isCurrentMonth = today.isSame(currentMonth, "month");
     const daysToShow = isCurrentMonth ? today.date() : daysInMonth;
 
     const visibleData = cumulativeDebit.slice(0, daysToShow);
     const visibleLabels = labels.slice(0, daysToShow);
 
-    const spendsTotal = visibleData[visibleData.length - 1] || 0;
+    const spendsTotal =
+        visibleData.length > 0 ? visibleData[visibleData.length - 1] : 0;
 
-    // ---- MONTHLY BAR CHART (restore old working logic) ----
+    // --- Monthly Bar Chart Data (Last 6 Months) ---
     const monthlyLabels: string[] = [];
     const monthlySpends: number[] = [];
 
     for (let i = 5; i >= 0; i--) {
-        const m = currentMonth.subtract(i, 'month');
-        const total = transactions
-            .filter(tx => tx.type === 'debit' && dayjs(tx.date).isSame(m, 'month'))
-            .reduce((sum, tx) => sum + tx.amount, 0);
+        const m = currentMonth.subtract(i, "month");
 
-        monthlyLabels.push(m.format('MMM'));
+        const total = round2(
+            transactions
+                .filter(
+                    (tx) =>
+                        tx.type === "debit" &&
+                        dayjs(tx.date).isSame(m, "month")
+                )
+                .reduce((sum, tx) => sum + round2(tx.amount), 0)
+        );
+
+        monthlyLabels.push(m.format("MMM"));
         monthlySpends.push(total);
     }
 
-    // Format Y Axis
+    // --- Last Month's Debit ---
+    const lastMonthSpends = round2(
+        prevMonthTx
+            .filter((tx) => tx.type === "debit")
+            .reduce((s, tx) => s + round2(tx.amount), 0)
+    );
+
+    // Percent Budget Used
+    const percentUsed =
+        budget > 0 ? round2((spendsTotal / budget) * 100) : 0;
+
+    // Y Axis Format
     const formatYAxis = (value: number) => {
         if (value >= 100000) return `${(value / 100000).toFixed(1)}L`;
         if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
         return `${value}`;
     };
 
+    // Chart Config
     const chartConfig = {
         backgroundColor: theme.card,
         backgroundGradientFrom: theme.card,
@@ -108,14 +144,11 @@ export default function SpendsChart({ transactions, currentMonth }: Props) {
         color: (opacity = 1) => theme.textDark,
         labelColor: (opacity = 1) => theme.textLight,
         propsForBackgroundLines: {
-            strokeDasharray: '4',
+            strokeDasharray: "4",
             stroke: theme.border,
             strokeWidth: 0.5,
         },
     };
-
-    const percentUsed =
-        budget > 0 ? Math.min((spendsTotal / budget) * 100, 100).toFixed(1) : '0';
 
     return (
         <>
@@ -125,8 +158,8 @@ export default function SpendsChart({ transactions, currentMonth }: Props) {
                     <Text style={[styles.smallText, { color: theme.textLight }]}>
                         This month so far
                     </Text>
-                    <Text style={[styles.valueText, { color: '#e63946' }]}>
-                        ₹{spendsTotal} / ₹{budget}
+                    <Text style={[styles.valueText, { color: "#e63946" }]}>
+                        ₹{fmt(spendsTotal)} / ₹{fmt(budget)}
                     </Text>
 
                     {budget > 0 && (
@@ -135,12 +168,12 @@ export default function SpendsChart({ transactions, currentMonth }: Props) {
                                 fontSize: 13,
                                 marginTop: 2,
                                 color:
-                                    Number(percentUsed) > 90
+                                    percentUsed > 90
                                         ? theme.danger
                                         : theme.success,
                             }}
                         >
-                            {percentUsed}% used
+                            {percentUsed.toFixed(1)}% used
                         </Text>
                     )}
                 </TouchableOpacity>
@@ -150,10 +183,7 @@ export default function SpendsChart({ transactions, currentMonth }: Props) {
                         Last month
                     </Text>
                     <Text style={[styles.valueText, { color: theme.textDark }]}>
-                        ₹
-                        {prevMonthTx
-                            .filter(tx => tx.type === 'debit')
-                            .reduce((s, tx) => s + tx.amount, 0)}
+                        ₹{fmt(lastMonthSpends)}
                     </Text>
                 </View>
             </View>
@@ -161,7 +191,7 @@ export default function SpendsChart({ transactions, currentMonth }: Props) {
             {/* GRAPH CARD */}
             <View style={[styles.card, { backgroundColor: theme.card }]}>
                 <Text style={[styles.sectionTitle, { color: theme.textDark }]}>
-                    {isDaily ? 'Daily Spends Overview' : 'Monthly Spends Overview'}
+                    {isDaily ? "Daily Spends Overview" : "Monthly Spends Overview"}
                 </Text>
 
                 {/* DAILY CHART */}
@@ -172,26 +202,27 @@ export default function SpendsChart({ transactions, currentMonth }: Props) {
                             datasets: [
                                 {
                                     data: visibleData,
-                                    color: () => '#e63946',
+                                    color: () => "#e63946",
                                     strokeWidth: 2,
                                 },
-                                // Budget line
                                 ...(budget > 0
                                     ? [
-                                        {
-                                            data: Array(visibleData.length).fill(budget),
-                                            color: () => theme.success,
-                                            strokeWidth: 2,
-                                            withDots: false,
-                                        },
-                                    ]
+                                          {
+                                              data: Array(
+                                                  visibleData.length
+                                              ).fill(budget),
+                                              color: () => theme.success,
+                                              strokeWidth: 2,
+                                              withDots: false,
+                                          },
+                                      ]
                                     : []),
                             ],
                         }}
                         width={screenWidth - 60}
                         height={250}
                         yAxisLabel="₹"
-                        formatYLabel={v => formatYAxis(Number(v))}
+                        formatYLabel={(v) => formatYAxis(Number(v))}
                         chartConfig={chartConfig}
                         fromZero
                         withInnerLines
@@ -207,17 +238,17 @@ export default function SpendsChart({ transactions, currentMonth }: Props) {
                         width={screenWidth - 60}
                         height={260}
                         yAxisLabel="₹"
-                        yAxisSuffix=""
+                        yAxisSuffix=''
                         chartConfig={{
                             ...chartConfig,
                             barPercentage: 0.55,
-                            color: () => '#e63946',
+                            color: () => "#e63946",
                         }}
                         fromZero
-                        showValuesOnTopOfBars={false}
                         style={{ borderRadius: 12 }}
                     />
                 )}
+
                 {/* TOGGLE BUTTONS */}
                 <View style={styles.toggleRow}>
                     <TouchableOpacity
@@ -227,7 +258,7 @@ export default function SpendsChart({ transactions, currentMonth }: Props) {
                             isDaily && { backgroundColor: theme.primary },
                         ]}
                     >
-                        <Text style={{ color: isDaily ? '#fff' : theme.textDark }}>
+                        <Text style={{ color: isDaily ? "#fff" : theme.textDark }}>
                             Daily
                         </Text>
                     </TouchableOpacity>
@@ -239,7 +270,7 @@ export default function SpendsChart({ transactions, currentMonth }: Props) {
                             !isDaily && { backgroundColor: theme.primary },
                         ]}
                     >
-                        <Text style={{ color: !isDaily ? '#fff' : theme.textDark }}>
+                        <Text style={{ color: !isDaily ? "#fff" : theme.textDark }}>
                             Monthly
                         </Text>
                     </TouchableOpacity>
@@ -253,7 +284,7 @@ export default function SpendsChart({ transactions, currentMonth }: Props) {
                 tempBudget={tempBudget}
                 setTempBudget={setTempBudget}
                 onCancel={() => setShowBudgetModal(false)}
-                onSave={async newBudget => {
+                onSave={async (newBudget) => {
                     await saveBudget(newBudget);
                     setBudget(newBudget);
                     setShowBudgetModal(false);
@@ -265,26 +296,26 @@ export default function SpendsChart({ transactions, currentMonth }: Props) {
 
 const styles = StyleSheet.create({
     comparisonRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+        flexDirection: "row",
+        justifyContent: "space-between",
         marginBottom: 16,
     },
     smallText: { fontSize: 13 },
-    valueText: { fontSize: 16, fontWeight: '700' },
+    valueText: { fontSize: 16, fontWeight: "700" },
     card: {
         borderRadius: 16,
         padding: 16,
         marginBottom: 20,
         elevation: 3,
-        shadowColor: '#000',
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.15,
         shadowRadius: 4,
     },
-    sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 10 },
+    sectionTitle: { fontSize: 16, fontWeight: "600", marginBottom: 10 },
     toggleRow: {
-        flexDirection: 'row',
-        justifyContent: 'center',
+        flexDirection: "row",
+        justifyContent: "center",
         gap: 12,
         marginTop: 16,
     },
@@ -292,6 +323,6 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
         paddingHorizontal: 20,
         borderRadius: 20,
-        backgroundColor: '#ccc',
+        backgroundColor: "#ccc",
     },
 });

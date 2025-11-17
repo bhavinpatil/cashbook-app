@@ -15,7 +15,7 @@ import type { SmsTransaction } from '@/types/sms';
 const screenWidth = Dimensions.get('window').width;
 const round2 = (n: number) => Number(Number(n).toFixed(2));
 
-// 25-color palette - high contrast and works in dark/light
+// 25-color palette
 const PALETTE = [
   '#4CAF50', '#2196F3', '#FFC107', '#FF5722', '#9C27B0',
   '#E91E63', '#795548', '#009688', '#3F51B5', '#8BC34A',
@@ -28,30 +28,34 @@ export default function SmsSummaryChart({ transactions }: { transactions: SmsTra
   const { theme } = useTheme();
   const [othersExpanded, setOthersExpanded] = useState(false);
 
-  // Build category totals (rounded)
+  // ---------- CATEGORY TOTALS (DEBIT ONLY) ----------
   const categoryTotals = useMemo(() => {
     const map: Record<string, number> = {};
+
     transactions.forEach((t) => {
+      if (t.type !== 'Debit') return;     // ❗ Include only Debit transactions
+
       const key = t.category || 'Uncategorized';
       map[key] = round2((map[key] || 0) + round2(t.amount));
     });
+
     return map;
   }, [transactions]);
 
-  // Convert to sorted array by amount desc
+  // Sorted categories
   const sortedCats = useMemo(() => {
     return Object.entries(categoryTotals)
       .map(([name, amount]) => ({ name, amount }))
       .sort((a, b) => b.amount - a.amount);
   }, [categoryTotals]);
 
-  // Top N (8) + Others logic
+  // Top 8 + Others
   const TOP_N = 8;
   const top = sortedCats.slice(0, TOP_N);
   const others = sortedCats.slice(TOP_N);
   const othersSum = round2(others.reduce((s, c) => s + c.amount, 0));
 
-  // Prepare pie data: top items + others (if any)
+  // Pie Chart Data
   const pieData = useMemo(() => {
     const items = top.map((c, idx) => ({
       name: c.name,
@@ -65,40 +69,33 @@ export default function SmsSummaryChart({ transactions }: { transactions: SmsTra
       items.push({
         name: 'Others',
         population: othersSum,
-        color: '#A1A1A1', // neutral color for Others
+        color: '#A1A1A1',
         legendFontColor: theme.textDark,
         legendFontSize: 12,
       });
     }
 
-    return items.filter(i => i.population > 0);
+    return items.filter((i) => i.population > 0);
   }, [top, others, othersSum, theme.textDark]);
 
-  // Chips data: same as top
   const chips = top.map((c, idx) => ({
     name: c.name,
     amount: c.amount,
     color: PALETTE[idx % PALETTE.length],
   }));
 
-  // Helper to format currency with 2 decimals
-  const fmt = (n: number) => {
-    try {
-      return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    } catch {
-      return round2(n).toFixed(2);
-    }
-  };
+  const fmt = (n: number) =>
+    n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
     <View style={[styles.container]}>
       <Text style={[styles.title, { color: theme.textDark }]}>Category Summary</Text>
 
       {pieData.length === 0 ? (
-        <Text style={{ color: theme.textLight, textAlign: 'center' }}>No categorized data</Text>
+        <Text style={{ color: theme.textLight, textAlign: 'center' }}>No debit category data</Text>
       ) : (
         <>
-          {/* Chart */}
+          {/* PIE CHART */}
           <View style={styles.chartRow}>
             <PieChart
               data={pieData}
@@ -112,10 +109,16 @@ export default function SmsSummaryChart({ transactions }: { transactions: SmsTra
             />
           </View>
 
-          {/* Chips grid for Top N */}
+          {/* TOP CATEGORY CHIPS */}
           <View style={styles.chipsWrap}>
             {chips.map((c) => (
-              <View key={`chip-${c.name}`} style={[styles.chip, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <View
+                key={`chip-${c.name}`}
+                style={[
+                  styles.chip,
+                  { backgroundColor: theme.card, borderColor: theme.border },
+                ]}
+              >
                 <View style={[styles.dot, { backgroundColor: c.color }]} />
                 <Text style={[styles.chipText, { color: theme.textDark }]}>
                   {c.name} — ₹{fmt(c.amount)}
@@ -124,22 +127,32 @@ export default function SmsSummaryChart({ transactions }: { transactions: SmsTra
             ))}
           </View>
 
-          {/* Others section (adaptive) */}
+          {/* OTHERS DROPDOWN */}
           {others.length > 0 && (
             <View style={{ marginTop: 10, width: '100%' }}>
               <TouchableOpacity
                 activeOpacity={0.85}
                 onPress={() => setOthersExpanded((v) => !v)}
-                style={[styles.othersHeader, { borderColor: theme.border, backgroundColor: theme.card }]}
+                style={[
+                  styles.othersHeader,
+                  { borderColor: theme.border, backgroundColor: theme.card },
+                ]}
               >
                 <Text style={{ color: theme.textDark, fontWeight: '600' }}>
                   Others ({others.length}) — ₹{fmt(othersSum)}
                 </Text>
-                <Text style={{ color: theme.textLight }}>{othersExpanded ? '▲' : '▼'}</Text>
+                <Text style={{ color: theme.textLight }}>
+                  {othersExpanded ? '▲' : '▼'}
+                </Text>
               </TouchableOpacity>
 
               {othersExpanded && (
-                <View style={[styles.othersListWrapper, { borderColor: theme.border, backgroundColor: theme.card }]}>
+                <View
+                  style={[
+                    styles.othersListWrapper,
+                    { borderColor: theme.border, backgroundColor: theme.card },
+                  ]}
+                >
                   <ScrollView style={{ maxHeight: 180 }} contentContainerStyle={{ padding: 8 }}>
                     {others.map((c, idx) => {
                       const color = PALETTE[(TOP_N + idx) % PALETTE.length];
@@ -209,7 +222,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     paddingHorizontal: 6,
-    borderBottomWidth: 0,
     justifyContent: 'space-between',
   },
   otherText: { flex: 1, fontSize: 14, marginLeft: 8 },
