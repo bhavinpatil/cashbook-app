@@ -21,6 +21,7 @@ import {
 import { Transaction } from '@/types/types';
 import { eventBus } from '@/contexts/EventBus';
 
+const round2 = (n: number) => Number(Number(n).toFixed(2));
 
 interface Props {
     visible: boolean;
@@ -105,7 +106,7 @@ export default function EditTransactionModal({
 
         const updatedTx: Transaction = {
             ...transaction,
-            amount: Number(amount),
+            amount: round2(Number(amount)),
             description,
             category,
             images,
